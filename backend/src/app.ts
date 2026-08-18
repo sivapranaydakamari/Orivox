@@ -20,7 +20,11 @@ app.use(globalLimiter);
 app.use(requestIdMiddleware);
 
 // Body parser
-app.use(express.json());
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf.toString('utf8');
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging (pino-http)

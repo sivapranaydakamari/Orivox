@@ -32,5 +32,11 @@ router.get(
   requireOrgRole([OrgRole.ORG_ADMIN, OrgRole.MANAGER, OrgRole.TEAM_LEAD, OrgRole.EMPLOYEE]),
   githubAppController.listRepositories.bind(githubAppController)
 );
+// List all repositories for all installations
+router.get(
+  '/repositories',
+  requireOrgRole([OrgRole.ORG_ADMIN, OrgRole.MANAGER, OrgRole.TEAM_LEAD, OrgRole.EMPLOYEE]),
+  githubAppController.listAllRepositories.bind(githubAppController)
+);
 
 export default router;

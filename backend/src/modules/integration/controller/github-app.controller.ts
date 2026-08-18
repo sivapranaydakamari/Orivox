@@ -150,6 +150,62 @@ export class GitHubAppController {
       return ApiResponse.error(res, error.message, null, 500);
     }
   }
+  /**
+   * Lists repositories for all active installations for the current organization.
+   */
+  async listAllRepositories(req: Request, res: Response) {
+    try {
+      const organizationId = (req as any).organizationId;
+      
+      const installations = await GitHubInstallation.find({ 
+        organizationId,
+        status: GitHubInstallationStatus.ACTIVE
+      });
+
+      const installationsWithRepos = await Promise.all(
+        installations.map(async (installation) => {
+          try {
+            const data = await githubClient.listInstallationRepositories(installation.installationId);
+            const repositories = data.repositories.map((repo: any) => ({
+              id: repo.id,
+              name: repo.name,
+              full_name: repo.full_name,
+              private: repo.private,
+              default_branch: repo.default_branch,
+              html_url: repo.html_url,
+              description: repo.description,
+              owner: repo.owner.login,
+              updated_at: repo.updated_at,
+            }));
+
+            return {
+              installationId: installation._id,
+              githubAccountId: installation.githubAccountId,
+              githubAccountLogin: installation.githubAccountLogin,
+              githubAccountType: installation.githubAccountType,
+              repositories,
+            };
+          } catch (err) {
+            logger.warn({ err, installationId: installation.installationId }, 'Failed to list repositories for installation');
+            // If the token expires or app is uninstalled on GitHub but not deleted in our DB
+            return {
+              installationId: installation._id,
+              githubAccountId: installation.githubAccountId,
+              githubAccountLogin: installation.githubAccountLogin,
+              githubAccountType: installation.githubAccountType,
+              repositories: [],
+              error: 'Failed to access repositories from GitHub',
+            };
+          }
+        })
+      );
+
+      return ApiResponse.success(res, { installations: installationsWithRepos }, 'Repositories retrieved');
+    } catch (error: any) {
+      logger.error({ error }, 'Failed to list all repositories');
+      return ApiResponse.error(res, error.message, null, 500);
+    }
+  }
 }
 
 export const githubAppController = new GitHubAppController();

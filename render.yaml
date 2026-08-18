@@ -1,0 +1,36 @@
+services:
+  # 1. Background worker & cache database (Redis)
+  - type: redis
+    name: orivox-redis
+    ipAllowList: [] # only allow internal connections on Render
+    plan: free
+
+  # 2. Main API Backend (Node.js/Docker)
+  - type: web
+    name: orivox-backend
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      # Automatically gets the internal connection string from the Redis service above
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: orivox-redis
+          property: connectionString
+      
+      # The following must be set manually in the Render dashboard after deployment
+      - key: MONGO_URI
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true

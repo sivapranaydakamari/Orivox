@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Build Outputs
+build/
+dist/
+*.exe
+*.zip
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# IDE / OS Files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local Database & Caching
+dump.rdb
+redis/
+redis5/
+redis.zip
+redis5.zip
+
+# Orivox Temp Files
+scratch/

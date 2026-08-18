@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
 
 final githubAppApiProvider = Provider<GitHubAppApi>((ref) {
-  final dio = ref.watch(dioClientProvider);
+  final dio = ref.watch(dioProvider);
   return GitHubAppApi(dio);
 });
 

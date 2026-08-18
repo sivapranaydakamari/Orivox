@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import { githubAppController } from '../controller/github-app.controller';
-import { requireAuth, requireOrganization } from '../../../middleware/auth.middleware';
-import { requireRole } from '../../../middleware/role.middleware';
-import { SystemRole } from '../../user/model/user.model';
+import { requireAuth, requireOrganization, requireOrgRole } from '../../../middleware/auth.middleware';
+import { OrgRole } from '../../user/model/user.model';
 
 const router = Router();
 
@@ -16,21 +15,21 @@ router.use(requireOrganization);
 // Only ORG_ADMIN can initiate an installation
 router.get(
   '/install',
-  requireRole([SystemRole.ORG_ADMIN]),
+  requireOrgRole([OrgRole.ORG_ADMIN]),
   githubAppController.getInstallUrl.bind(githubAppController)
 );
 
 // List installations for the current organization
 router.get(
   '/installations',
-  requireRole([SystemRole.ORG_ADMIN, SystemRole.MANAGER, SystemRole.TEAM_LEAD, SystemRole.EMPLOYEE]),
+  requireOrgRole([OrgRole.ORG_ADMIN, OrgRole.MANAGER, OrgRole.TEAM_LEAD, OrgRole.EMPLOYEE]),
   githubAppController.listInstallations.bind(githubAppController)
 );
 
 // List repositories for a specific installation
 router.get(
   '/installations/:installationId/repositories',
-  requireRole([SystemRole.ORG_ADMIN, SystemRole.MANAGER, SystemRole.TEAM_LEAD, SystemRole.EMPLOYEE]),
+  requireOrgRole([OrgRole.ORG_ADMIN, OrgRole.MANAGER, OrgRole.TEAM_LEAD, OrgRole.EMPLOYEE]),
   githubAppController.listRepositories.bind(githubAppController)
 );
 

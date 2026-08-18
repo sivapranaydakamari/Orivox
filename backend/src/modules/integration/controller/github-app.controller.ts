@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ApiResponse } from '../../../utils/api-response';
+import { ApiResponse } from '../../../shared/utils/apiResponse';
 import { env } from '../../../config/env';
 import { GitHubInstallation, GitHubInstallationStatus } from '../model/github-installation.model';
 import { githubClient } from '../clients/github.client';
@@ -23,7 +23,7 @@ export class GitHubAppController {
       const state = Buffer.from(JSON.stringify({ organizationId })).toString('base64');
       const installUrl = `https://github.com/apps/${appName}/installations/new?state=${state}`;
 
-      return ApiResponse.success(res, 'Install URL generated', { url: installUrl });
+      return ApiResponse.success(res, { url: installUrl }, 'Install URL generated');
     } catch (error: any) {
       logger.error({ error }, 'Failed to generate GitHub App install URL');
       return ApiResponse.error(res, error.message, null, 500);
@@ -119,7 +119,7 @@ export class GitHubAppController {
         status: GitHubInstallationStatus.ACTIVE
       });
 
-      return ApiResponse.success(res, 'Installations retrieved', { installations });
+      return ApiResponse.success(res, { installations }, 'Installations retrieved');
     } catch (error: any) {
       logger.error({ error }, 'Failed to list GitHub App installations');
       return ApiResponse.error(res, error.message, null, 500);
@@ -158,7 +158,7 @@ export class GitHubAppController {
         updated_at: repo.updated_at,
       }));
 
-      return ApiResponse.success(res, 'Repositories retrieved', { repositories });
+      return ApiResponse.success(res, { repositories }, 'Repositories retrieved');
     } catch (error: any) {
       logger.error({ error }, 'Failed to list repositories');
       return ApiResponse.error(res, error.message, null, 500);

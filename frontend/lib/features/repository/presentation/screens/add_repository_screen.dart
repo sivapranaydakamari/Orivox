@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/saas_layout.dart';
@@ -40,20 +40,31 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
     try {
       final api = ref.read(githubAppApiProvider);
       final url = await api.getInstallUrl();
-      if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
-        throw Exception('Could not launch $url');
-      }
       
-      // Assume user comes back, we can automatically refresh or show a refresh button
-      setState(() {
-        _currentStep = 1;
-      });
-      // Refresh installations
-      ref.invalidate(githubInstallationsProvider);
+      final result = await FlutterWebAuth2.authenticate(
+        url: url,
+        callbackUrlScheme: 'orivox',
+      );
+      
+      final resultUri = Uri.parse(result);
+      final status = resultUri.queryParameters['status'];
+
+      if (status == 'success') {
+        // Refresh installations
+        ref.invalidate(githubInstallationsProvider);
+        
+        if (mounted) {
+          setState(() {
+            _currentStep = 1;
+          });
+        }
+      } else {
+        throw Exception('GitHub installation failed or was canceled.');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Connection failed or was canceled.')),
         );
       }
     } finally {
@@ -227,9 +238,11 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Select an Installation & Repository',
-              style: Theme.of(context).textTheme.titleLarge,
+            Expanded(
+              child: Text(
+                'Select an Installation & Repository',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             TextButton.icon(
               onPressed: () {

@@ -6,6 +6,7 @@ import { repositoryRepository } from '../../repository/repository/repository.rep
 import { queueService } from '../../jobs/queue.service';
 import { JobType } from '../../jobs/types/job.types';
 import { logger } from '../../../config/logger';
+import { env } from '../../../config/env';
 
 export class WebhookController {
   private verifySignature(payload: string, signature: string, secret: string): boolean {
@@ -29,42 +30,47 @@ export class WebhookController {
     }
 
     const payload = req.body;
-    if (!payload || !payload.repository || !payload.repository.html_url) {
+    if (!payload) {
       return ApiResponse.error(res, 'Invalid webhook payload structure', null, 400);
     }
 
-    const repositoryUrl = payload.repository.html_url;
-    const urlWithGit = repositoryUrl.endsWith('.git') ? repositoryUrl : `${repositoryUrl}.git`;
-    const urlWithoutGit = repositoryUrl.replace(/\.git$/, '');
-
-    const repository = await repositoryRepository.findOne({ 
-      repositoryUrl: { $in: [urlWithGit, urlWithoutGit] }
-    });
-    
-    if (!repository) {
-      logger.warn({ repositoryUrl }, 'Received webhook for unknown repository');
-      return ApiResponse.error(res, 'Repository not found', null, 404);
+    const globalSecret = env.GITHUB_WEBHOOK_SECRET;
+    if (!globalSecret) {
+      logger.error('GITHUB_WEBHOOK_SECRET is not configured globally');
+      return ApiResponse.error(res, 'Webhook secret not configured on server', null, 500);
     }
 
-    if (!repository.webhookSecret) {
-      logger.error({ repositoryId: repository._id }, 'Repository has no webhook secret configured');
-      return ApiResponse.error(res, 'Webhook secret not configured', null, 403);
-    }
-
-    // Usually Express body parser does not preserve rawBody unless configured, 
-    // but we assume standard JSON serialization is close enough if rawBody is missing, 
-    // or we'd configure `express.json({verify: ...})`. We'll use rawBody if available.
     const rawBody = (req as any).rawBody || JSON.stringify(req.body);
     
     try {
-      const isValid = this.verifySignature(rawBody, signature, repository.webhookSecret);
+      const isValid = this.verifySignature(rawBody, signature, globalSecret);
       
       if (!isValid) {
-        logger.warn({ repositoryId: repository._id, githubDeliveryId }, 'Invalid webhook signature');
+        logger.warn({ githubDeliveryId }, 'Invalid webhook signature');
         return ApiResponse.error(res, 'Invalid signature', null, 403);
       }
     } catch (err) {
       return ApiResponse.error(res, 'Error verifying signature', null, 500);
+    }
+
+    // Now we must identify the repository
+    const repositoryId = payload.repository?.id;
+    const installationId = payload.installation?.id;
+
+    if (!repositoryId || !installationId) {
+      // Some events like 'installation' do not have a repository, we might skip or handle them differently
+      // For now, if there is no repository, we just return 200
+      logger.info({ event, installationId }, 'Received GitHub webhook without repository context (e.g. installation event)');
+      return ApiResponse.success(res, null, 'Webhook accepted (no repository context)', 200);
+    }
+
+    const repository = await repositoryRepository.findOne({ 
+      githubRepositoryId: repositoryId
+    });
+    
+    if (!repository) {
+      logger.warn({ githubRepositoryId: repositoryId }, 'Received webhook for unknown repository');
+      return ApiResponse.success(res, null, 'Repository not tracked, ignoring', 200); // 200 so GitHub doesn't retry
     }
 
     logger.info({ repositoryId: repository._id, event, githubDeliveryId }, 'Received valid GitHub webhook');

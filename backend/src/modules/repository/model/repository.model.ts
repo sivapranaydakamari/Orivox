@@ -34,6 +34,16 @@ export interface IRepository extends Document {
   providerToken?: string;
   webhookSecret?: string;
 
+  // GitHub App Integration
+  githubInstallationId?: Types.ObjectId;
+  githubRepositoryId?: number;
+  githubRepositoryFullName?: string;
+  sourceConfiguration?: {
+    code: boolean;
+    docs: boolean;
+    prs: boolean;
+  };
+
   // Configuration
   syncMode: SyncMode;
   webhookStatus: WebhookStatus;
@@ -112,6 +122,22 @@ const RepositorySchema: Schema = new Schema(
       enum: Object.values(WebhookStatus),
       default: WebhookStatus.NOT_CONFIGURED,
     },
+    githubInstallationId: {
+      type: Schema.Types.ObjectId,
+      ref: 'GitHubInstallation',
+    },
+    githubRepositoryId: {
+      type: Number,
+    },
+    githubRepositoryFullName: {
+      type: String,
+      trim: true,
+    },
+    sourceConfiguration: {
+      code: { type: Boolean, default: true },
+      docs: { type: Boolean, default: true },
+      prs: { type: Boolean, default: false },
+    },
     syncStatus: {
       type: String,
       enum: Object.values(SyncStatus),
@@ -153,5 +179,6 @@ const RepositorySchema: Schema = new Schema(
 
 // Prevent connecting the same repository multiple times to the same project
 RepositorySchema.index({ projectId: 1, repositoryUrl: 1 }, { unique: true });
+RepositorySchema.index({ projectId: 1, githubRepositoryId: 1 }, { unique: true, sparse: true });
 
 export const Repository = mongoose.model<IRepository>('Repository', RepositorySchema);

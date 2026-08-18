@@ -5,7 +5,7 @@ import { logger } from '../../../config/logger';
 
 export interface SyncJobPayload {
   repositoryId: string;
-  providerToken: string;
+  providerToken?: string;
 }
 
 export class SyncWorker {

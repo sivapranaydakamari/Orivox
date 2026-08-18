@@ -7,12 +7,14 @@ import { sourceRegistry } from '../registry/source.registry';
 import { ingestionService } from './ingestion.service';
 import { DocumentSourceType } from '../../document/model/document.model';
 import { logger } from '../../../config/logger';
+import { GitHubInstallation } from '../model/github-installation.model';
+import { githubClient } from '../clients/github.client';
 
 export class SyncManager {
   /**
    * Starts synchronization for a given repository ID.
    */
-  async startSync(repositoryId: string | Types.ObjectId, providerToken: string, jobId: string): Promise<Types.ObjectId[]> {
+  async startSync(repositoryId: string | Types.ObjectId, providerToken: string | undefined, jobId: string): Promise<Types.ObjectId[]> {
     logger.info({ repositoryId, jobId }, 'SyncManager: Starting sync process');
 
     // 30 minutes lock expiration for worker recovery
@@ -75,9 +77,20 @@ export class SyncManager {
         throw new Error(`SyncManager: Invalid GitHub repository URL format '${lockedRepository.repositoryUrl}'`);
       }
 
+      // Generate App Installation Token if applicable
+      let activeToken = providerToken;
+      if (lockedRepository.githubInstallationId && !activeToken) {
+        const installation = await GitHubInstallation.findById(lockedRepository.githubInstallationId);
+        if (installation && installation.installationId) {
+          activeToken = await githubClient.getInstallationToken(installation.installationId);
+        } else {
+          logger.warn({ repositoryId }, 'SyncManager: GitHub installation not found for repository');
+        }
+      }
+
       // 4. Build Sync State
       const currentSyncState = {
-        token: providerToken,
+        token: activeToken || '',
         owner,
         repo,
         organizationId: lockedRepository.organizationId.toString(),

@@ -13,13 +13,21 @@ export class RepositoryService {
       throw new Error(`Project with ID ${dto.projectId} does not exist`);
     }
 
-    const existingRepo = await repositoryRepository.findOne({ 
-      projectId: dto.projectId, 
-      repositoryUrl: dto.repositoryUrl 
-    });
+    let existingRepo;
+    if (dto.githubRepositoryId) {
+      existingRepo = await repositoryRepository.findOne({
+        projectId: dto.projectId,
+        githubRepositoryId: dto.githubRepositoryId
+      });
+    } else if (dto.repositoryUrl) {
+      existingRepo = await repositoryRepository.findOne({ 
+        projectId: dto.projectId, 
+        repositoryUrl: dto.repositoryUrl 
+      });
+    }
     
     if (existingRepo) {
-      throw new Error(`Repository with URL '${dto.repositoryUrl}' already exists in this project`);
+      throw new Error(`Repository already exists in this project`);
     }
 
     // Attach the organizationId from the project
@@ -28,6 +36,7 @@ export class RepositoryService {
       organizationId: new Types.ObjectId(project.organizationId.toString()),
       projectId: new Types.ObjectId(dto.projectId),
       provider: dto.provider || 'GITHUB',
+      repositoryUrl: dto.repositoryUrl || `https://github.com/${dto.githubRepositoryFullName}`,
     } as unknown as Partial<IRepository>;
 
     const repository = await repositoryRepository.create(repoData);

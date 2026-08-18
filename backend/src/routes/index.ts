@@ -12,6 +12,7 @@ import jobRoutes from '../modules/jobs/routes/job.routes';
 import { requireAuth, requireOrganization } from '../middleware/auth.middleware';
 import userRoutes from '../modules/user/routes/user.routes';
 import webhookRoutes from '../modules/integration/routes/webhook.routes';
+import githubAppRoutes from '../modules/integration/routes/github-app.routes';
 
 const router = Router();
 
@@ -19,6 +20,10 @@ const router = Router();
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/integrations', webhookRoutes);
+
+// We mount githubAppRoutes on the base router because it has a public callback route inside, 
+// and the rest are protected by its own middleware block.
+router.use('/integrations/github', githubAppRoutes);
 
 // Protected routes (Require Authentication)
 const apiRouter = Router();

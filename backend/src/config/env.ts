@@ -14,6 +14,10 @@ const envSchema = z.object({
   REDIS_URL: z.string().default('redis://localhost:6379'),
   JWT_SECRET: z.string().default('fallback_secret_do_not_use_in_prod'),
   JWT_REFRESH_SECRET: z.string().default('fallback_refresh_secret'),
+  GITHUB_APP_ID: z.string().optional(),
+  GITHUB_APP_PRIVATE_KEY: z.string().optional(),
+  GITHUB_WEBHOOK_SECRET: z.string().optional(),
+  GITHUB_APP_NAME: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

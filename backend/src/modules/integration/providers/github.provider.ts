@@ -5,6 +5,7 @@ import { DocumentSourceType } from '../../document/model/document.model';
 import { logger } from '../../../config/logger';
 import { IRepository } from '../../repository/model/repository.model';
 import { ingestionService } from '../services/ingestion.service';
+import { GitHubInstallation } from '../model/github-installation.model';
 
 export class GitHubProvider implements ISourceProvider {
   constructor(private readonly client: GitHubClient) {}
@@ -31,7 +32,7 @@ export class GitHubProvider implements ISourceProvider {
     if (lower.includes('openapi') || lower.includes('swagger') || lower.endsWith('spec.json') || lower.endsWith('spec.yaml')) {
       return 'API_SPEC';
     }
-    return 'SOURCE_FILE';
+    return 'CODE';
   }
 
   private isExcluded(path: string): boolean {
@@ -55,6 +56,10 @@ export class GitHubProvider implements ISourceProvider {
     const artifacts: IRawArtifact[] = [];
     let nextCommitSha = lastProcessedCommitSha as string;
 
+    // Load source config to filter out what we fetch
+    // By default, if not specified, we fetch everything for backwards compatibility
+    const config = syncState.sourceConfiguration as any || { code: true, docs: true, prs: true };
+
     try {
       // Very basic implementation: just sync the main branch tree.
       // In a real system, you'd find the default branch dynamically and fetch the tree.
@@ -76,8 +81,12 @@ export class GitHubProvider implements ISourceProvider {
             if (artifacts.length > 50) break; // Limit for demo safety
 
             try {
-              const content = await this.client.getFileBlob(token as string, owner as string, repo as string, item.sha);
               const category = this.categorizeFile(item.path);
+              
+              if (category === 'CODE' && config.code === false) continue;
+              if ((category === 'DOCUMENTATION' || category === 'API_SPEC') && config.docs === false) continue;
+
+              const content = await this.client.getFileBlob(token as string, owner as string, repo as string, item.sha);
 
               artifacts.push({
                 sourceType: DocumentSourceType.GITHUB,
@@ -118,7 +127,14 @@ export class GitHubProvider implements ISourceProvider {
    */
   async processWebhook(context: { event: string, payload: any, repository: IRepository }): Promise<void> {
     const { event, payload, repository } = context;
-    const token = repository.providerToken;
+    let token = repository.providerToken;
+
+    if (repository.githubInstallationId && !token) {
+      const installation = await GitHubInstallation.findById(repository.githubInstallationId);
+      if (installation && installation.installationId) {
+        token = await this.client.getInstallationToken(installation.installationId);
+      }
+    }
 
     if (!token) {
       logger.error('No provider token found for repository webhook processing');
@@ -156,6 +172,12 @@ export class GitHubProvider implements ISourceProvider {
 
     for (const path of filesToIngest) {
       if (this.isExcluded(path)) continue;
+
+      const category = this.categorizeFile(path);
+      const config = repository.sourceConfiguration || { code: true, docs: true, prs: false };
+      
+      if (category === 'CODE' && config.code === false) continue;
+      if ((category === 'DOCUMENTATION' || category === 'API_SPEC') && config.docs === false) continue;
 
       try {
         // Find the blob sha for this path in the latest commit tree.
@@ -206,6 +228,12 @@ export class GitHubProvider implements ISourceProvider {
   }
 
   private async handlePullRequestEvent(payload: any, owner: string, repo: string, token: string, repository: IRepository) {
+    const config = repository.sourceConfiguration || { code: true, docs: true, prs: false };
+    if (config.prs === false) {
+      logger.info('Skipping Pull Request event as PR ingestion is disabled for this repository');
+      return;
+    }
+
     const pr = payload.pull_request;
     const action = payload.action;
 

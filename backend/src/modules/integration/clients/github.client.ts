@@ -1,4 +1,6 @@
 import { logger } from '../../../config/logger';
+import jwt from 'jsonwebtoken';
+import { env } from '../../../config/env';
 
 export class GitHubClient {
   private readonly baseUrl = 'https://api.github.com';
@@ -24,6 +26,73 @@ export class GitHubClient {
       const resetTime = new Date(parseInt(reset) * 1000);
       logger.info({ remaining, resetTime }, 'GitHub API Rate Limit Info');
     }
+  }
+
+  /**
+   * Generates a GitHub App JWT.
+   */
+  private generateAppJwt(): string {
+    const appId = env.GITHUB_APP_ID;
+    const privateKeyRaw = env.GITHUB_APP_PRIVATE_KEY;
+
+    if (!appId || !privateKeyRaw) {
+      throw new Error('GitHub App credentials are not configured');
+    }
+
+    // Handle escaped newlines from environment variables
+    const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+      iat: now - 60, // Issued at time, 60 seconds in the past to allow for clock drift
+      exp: now + (10 * 60), // JWT expiration time (10 minute maximum)
+      iss: appId, // GitHub App ID
+    };
+
+    return jwt.sign(payload, privateKey, { algorithm: 'RS256' });
+  }
+
+  /**
+   * Fetches an installation access token for a specific installation ID.
+   */
+  async getInstallationToken(installationId: number): Promise<string> {
+    const appJwt = this.generateAppJwt();
+    const url = `${this.baseUrl}/app/installations/${installationId}/access_tokens`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: this.getHeaders(appJwt),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error({ installationId, status: response.status, errorText }, 'Failed to generate GitHub installation token');
+      throw new Error(`GitHub API Error: Failed to generate installation token (Status: ${response.status})`);
+    }
+
+    const data = await response.json();
+    return data.token;
+  }
+
+  /**
+   * List accessible repositories for an installation.
+   */
+  async listInstallationRepositories(installationId: number) {
+    const token = await this.getInstallationToken(installationId);
+    // Note: The /installation/repositories endpoint requires the installation token.
+    const url = `${this.baseUrl}/installation/repositories?per_page=100`;
+    
+    const response = await fetch(url, {
+      headers: this.getHeaders(token),
+    });
+
+    this.logRateLimit(response);
+
+    if (!response.ok) {
+      throw new Error(`GitHub API Error: Failed to list installation repositories (Status: ${response.status})`);
+    }
+
+    return await response.json();
   }
 
   /**

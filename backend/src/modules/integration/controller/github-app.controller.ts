@@ -86,24 +86,10 @@ export class GitHubAppController {
         { upsert: true, new: true }
       );
 
-      // Return a simple HTML page that asks the user to close the window
-      res.send(`
-        <html>
-          <head><title>GitHub Connected</title></head>
-          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
-            <h2>GitHub App Successfully Installed! 🎉</h2>
-            <p>Orivox is now connected. You may close this window and return to the application.</p>
-            <script>
-              setTimeout(() => {
-                window.close();
-              }, 3000);
-            </script>
-          </body>
-        </html>
-      `);
+      res.redirect('orivox://github-callback?status=success');
     } catch (error: any) {
       logger.error({ error }, 'Failed to handle GitHub App callback');
-      res.status(500).send('An error occurred during GitHub App installation.');
+      res.redirect('orivox://github-callback?status=error');
     }
   }
 

@@ -34,11 +34,15 @@ export class WebhookController {
     }
 
     const repositoryUrl = payload.repository.html_url;
+    const urlWithGit = repositoryUrl.endsWith('.git') ? repositoryUrl : `${repositoryUrl}.git`;
+    const urlWithoutGit = repositoryUrl.replace(/\.git$/, '');
 
-    const repository = await repositoryRepository.findOne({ repositoryUrl, isActive: true });
+    const repository = await repositoryRepository.findOne({ 
+      repositoryUrl: { $in: [urlWithGit, urlWithoutGit] }
+    });
     
     if (!repository) {
-      logger.warn({ repositoryUrl }, 'Received webhook for unknown or inactive repository');
+      logger.warn({ repositoryUrl }, 'Received webhook for unknown repository');
       return ApiResponse.error(res, 'Repository not found', null, 404);
     }
 

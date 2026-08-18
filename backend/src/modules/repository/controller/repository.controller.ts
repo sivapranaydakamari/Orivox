@@ -74,7 +74,9 @@ export class RepositoryController {
       return ApiResponse.error(res, 'Repository not found', null, 404);
     }
 
-    const baseUrl = env.NODE_ENV === 'development' ? `http://localhost:${env.PORT}` : 'https://api.orivox.com';
+    const baseUrl = env.NODE_ENV === 'development' 
+      ? `http://localhost:${env.PORT}` 
+      : (process.env.RENDER_EXTERNAL_URL || 'https://orivox-backend.onrender.com');
     const webhookUrl = `${baseUrl}/api/v1/integrations/github/webhook`;
 
     // Return the secret ONCE.

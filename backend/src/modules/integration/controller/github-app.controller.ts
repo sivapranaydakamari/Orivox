@@ -119,6 +119,10 @@ export class GitHubAppController {
           <body style="font-family: sans-serif; text-align: center; padding: 50px;">
             <h1 style="color: #ef4444;">GitHub Connection Failed</h1>
             <p>Please return to Orivox and try again.</p>
+            <div style="margin-top: 20px; padding: 15px; background: #fee2e2; border-radius: 8px; border: 1px solid #ef4444; color: #991b1b; text-align: left; display: inline-block;">
+              <strong>Error Details:</strong><br/>
+              <code>${error.message || String(error)}</code>
+            </div>
           </body>
         </html>
       `);

@@ -307,6 +307,12 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
               isLoading: _isLaunching,
               onPressed: _launchGitHubInstall,
             ),
+            const SizedBox(height: AppSpacing.md),
+            TextButton.icon(
+              onPressed: _showReconcileDialog,
+              icon: const Icon(Icons.build, size: 18),
+              label: const Text('Advanced: Link Existing Installation ID'),
+            ),
           ],
         );
       case GitHubConnectionState.loadingRepositories:
@@ -340,10 +346,66 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Connect Another GitHub Account'),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            TextButton.icon(
+              onPressed: _showReconcileDialog,
+              icon: const Icon(Icons.build, size: 18),
+              label: const Text('Advanced: Link Existing Installation ID'),
+            ),
           ],
         );
       case GitHubConnectionState.fetchFailed:
         return const SizedBox.shrink(); // Error banner displayed above
+    }
+  }
+
+  Future<void> _showReconcileDialog() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Link Existing Installation'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('If you already installed the GitHub App but it is not showing up, enter the Installation ID from your GitHub App settings URL (e.g. 154716160).'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(labelText: 'Installation ID'),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Link')),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      setState(() {
+        _isLaunching = true;
+        _errorMessage = null;
+      });
+      try {
+        await ref.read(githubAppApiProvider).reconcileInstallation(result.trim());
+        await _checkInstallationAndLoadRepositories();
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _errorMessage = ApiErrorHandler.getMessage(e);
+          });
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLaunching = false;
+          });
+        }
+      }
     }
   }
 

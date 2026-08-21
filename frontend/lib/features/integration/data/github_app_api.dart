@@ -34,4 +34,11 @@ class GitHubAppApi {
     final data = response.data['data']['installations'] as List;
     return List<Map<String, dynamic>>.from(data);
   }
+
+  Future<void> reconcileInstallation(String installationId) async {
+    await _dio.post(
+      '/integrations/github/installations/reconcile',
+      data: {'installationId': installationId},
+    );
+  }
 }

@@ -234,7 +234,7 @@ export class GitHubAppController {
         })
       );
 
-      return ApiResponse.success(res, installationsWithRepos, 'Repositories retrieved');
+      return ApiResponse.success(res, { installations: installationsWithRepos }, 'Repositories retrieved');
     } catch (error: any) {
       logger.error({ error }, 'Failed to list all repositories');
       return ApiResponse.error(res, { code: 'GITHUB_REPOSITORY_FETCH_FAILED', message: 'Unable to fetch repositories from GitHub. Please try again.' }, null, 500);

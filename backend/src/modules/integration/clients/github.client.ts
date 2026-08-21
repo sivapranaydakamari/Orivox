@@ -40,7 +40,21 @@ export class GitHubClient {
     }
 
     // Handle escaped newlines from environment variables
-    const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+    let privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+
+    // Auto-fix if Render stripped actual newlines (user pasted as a single line)
+    if (!privateKey.includes('\n')) {
+      privateKey = privateKey
+        .replace(/-----BEGIN RSA PRIVATE KEY-----/i, '-----BEGIN RSA PRIVATE KEY-----\n')
+        .replace(/-----END RSA PRIVATE KEY-----/i, '\n-----END RSA PRIVATE KEY-----');
+      
+      const lines = privateKey.split('\n');
+      if (lines.length === 3) {
+         // Remove any stray spaces in the base64 body that might have been inserted when collapsing newlines
+         lines[1] = lines[1].replace(/\s+/g, '');
+         privateKey = lines.join('\n');
+      }
+    }
 
     const now = Math.floor(Date.now() / 1000);
     const payload = {

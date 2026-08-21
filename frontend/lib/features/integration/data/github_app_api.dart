@@ -28,4 +28,10 @@ class GitHubAppApi {
     final data = response.data['data']['repositories'] as List;
     return List<Map<String, dynamic>>.from(data);
   }
+
+  Future<List<Map<String, dynamic>>> getAllRepositories() async {
+    final response = await _dio.get('/integrations/github/repositories');
+    final data = response.data['data']['installations'] as List;
+    return List<Map<String, dynamic>>.from(data);
+  }
 }

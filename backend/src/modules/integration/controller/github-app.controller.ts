@@ -86,10 +86,36 @@ export class GitHubAppController {
         { upsert: true, new: true }
       );
 
-      res.redirect('orivox://github-callback?status=success');
+      res.send(`
+        <html>
+          <head>
+            <title>GitHub Connected</title>
+            <style>
+              body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f9fafb; margin: 0; }
+              .container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+              h1 { color: #10b981; }
+              p { color: #4b5563; margin-top: 16px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>GitHub Connected Successfully</h1>
+              <p>You can close this window and return to Orivox.</p>
+            </div>
+          </body>
+        </html>
+      `);
     } catch (error: any) {
       logger.error({ error }, 'Failed to handle GitHub App callback');
-      res.redirect('orivox://github-callback?status=error');
+      res.send(`
+        <html>
+          <head><title>GitHub Connection Failed</title></head>
+          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h1 style="color: #ef4444;">GitHub Connection Failed</h1>
+            <p>Please return to Orivox and try again.</p>
+          </body>
+        </html>
+      `);
     }
   }
 

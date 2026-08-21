@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/saas_layout.dart';
@@ -25,6 +25,7 @@ class AddRepositoryScreen extends ConsumerStatefulWidget {
 
 class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
   int _currentStep = 0; // 0: Connect, 1: Select Repo, 2: Configure
+  bool _initialized = false;
 
   Map<String, dynamic>? _selectedInstallation;
   Map<String, dynamic>? _selectedRepository;
@@ -41,30 +42,28 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
       final api = ref.read(githubAppApiProvider);
       final url = await api.getInstallUrl();
       
-      final result = await FlutterWebAuth2.authenticate(
-        url: url,
-        callbackUrlScheme: 'orivox',
-      );
-      
-      final resultUri = Uri.parse(result);
-      final status = resultUri.queryParameters['status'];
-
-      if (status == 'success') {
-        // Refresh installations
-        ref.invalidate(githubInstallationsProvider);
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
         
         if (mounted) {
-          setState(() {
-            _currentStep = 1;
-          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please complete the installation in your browser, then click Refresh.'),
+              duration: Duration(seconds: 5),
+            ),
+          );
         }
       } else {
-        throw Exception('GitHub installation failed or was canceled.');
+        throw Exception('Could not launch browser.');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connection failed or was canceled.')),
+          SnackBar(content: Text('Connection failed: $e')),
         );
       }
     } finally {
@@ -75,13 +74,13 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
   }
 
   void _submit() {
-    if (_selectedRepository == null) return;
+    if (_selectedRepository == null || _selectedInstallation == null) return;
     
     final dto = CreateRepositoryDto(
       projectId: widget.projectId,
       repositoryName: _selectedRepository!['name'] as String,
       provider: 'GITHUB',
-      githubInstallationId: _selectedInstallation!['_id'] as String, // Assuming the backend returns _id
+      githubInstallationId: _selectedInstallation!['installationId'] as String,
       githubRepositoryId: _selectedRepository!['id'] as int,
       githubRepositoryFullName: _selectedRepository!['full_name'] as String,
       sourceConfiguration: SourceConfigurationDto(
@@ -101,6 +100,7 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
   @override
   Widget build(BuildContext context) {
     final actionState = ref.watch(repositoryActionProvider);
+    final allRepositoriesAsync = ref.watch(githubAllRepositoriesProvider);
     
     ref.listen<AsyncValue<void>>(
       repositoryActionProvider,
@@ -115,21 +115,45 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
       },
     );
 
+    // Auto-advance logic
+    if (allRepositoriesAsync.hasValue && !_initialized) {
+      final installations = allRepositoriesAsync.value!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && installations.isNotEmpty) {
+          setState(() {
+            _currentStep = 1;
+            if (installations.length == 1) {
+              _selectedInstallation = installations.first;
+            }
+            _initialized = true;
+          });
+        } else if (mounted) {
+          setState(() {
+            _initialized = true;
+          });
+        }
+      });
+    }
+
     return SaaSLayout(
       title: 'Connect GitHub Repository',
       child: ResponsiveLayout(
-        mobile: _buildContent(actionState),
+        mobile: _buildContent(actionState, allRepositoriesAsync),
         desktop: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 800),
-            child: _buildContent(actionState),
+            child: _buildContent(actionState, allRepositoriesAsync),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildContent(AsyncValue<void> actionState) {
+  Widget _buildContent(AsyncValue<void> actionState, AsyncValue<List<Map<String, dynamic>>> allRepositoriesAsync) {
+    if (!_initialized && allRepositoriesAsync.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Card(
@@ -146,7 +170,7 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
               _buildStepper(),
               const SizedBox(height: AppSpacing.xxl),
               if (_currentStep == 0) _buildStep1Connect(),
-              if (_currentStep == 1) _buildStep2SelectRepo(),
+              if (_currentStep == 1) _buildStep2SelectRepo(allRepositoriesAsync),
               if (_currentStep == 2) _buildStep3Configure(actionState),
             ],
           ),
@@ -229,9 +253,7 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
     );
   }
 
-  Widget _buildStep2SelectRepo() {
-    final installationsAsync = ref.watch(githubInstallationsProvider);
-
+  Widget _buildStep2SelectRepo(AsyncValue<List<Map<String, dynamic>>> allRepositoriesAsync) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -244,25 +266,38 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
-            TextButton.icon(
-              onPressed: () {
-                ref.invalidate(githubInstallationsProvider);
-              },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Refresh'),
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    ref.invalidate(githubAllRepositoriesProvider);
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Refresh'),
+                ),
+              ],
             ),
           ],
         ),
+        const SizedBox(height: AppSpacing.sm),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _launchGitHubInstall,
+            icon: const Icon(Icons.add),
+            label: const Text('Connect Another GitHub Account'),
+          ),
+        ),
         const SizedBox(height: AppSpacing.lg),
         
-        installationsAsync.when(
+        allRepositoriesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Text('Error loading installations: $err', style: const TextStyle(color: Colors.red)),
+          error: (err, stack) => Text('Error loading repositories: $err', style: const TextStyle(color: Colors.red)),
           data: (installations) {
             if (installations.isEmpty) {
               return Column(
                 children: [
-                  const Text('No active installations found. Please install the GitHub App first.'),
+                  const Text('No active installations found. Please connect your GitHub account.'),
                   const SizedBox(height: AppSpacing.md),
                   PrimaryButton(
                     text: 'Install GitHub App',
@@ -294,7 +329,7 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
                 const SizedBox(height: AppSpacing.xl),
 
                 if (_selectedInstallation != null)
-                  _buildRepositoryList(_selectedInstallation!['_id'] as String),
+                  _buildRepositoryList(_selectedInstallation!['repositories'] as List),
               ],
             );
           },
@@ -303,54 +338,46 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
     );
   }
 
-  Widget _buildRepositoryList(String installationId) {
-    final repositoriesAsync = ref.watch(githubRepositoriesProvider(installationId));
+  Widget _buildRepositoryList(List repositories) {
+    if (repositories.isEmpty) {
+      return const Text('No repositories accessible for this installation.');
+    }
 
-    return repositoriesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Text('Error loading repositories: $err', style: const TextStyle(color: Colors.red)),
-      data: (repositories) {
-        if (repositories.isEmpty) {
-          return const Text('No repositories accessible for this installation.');
-        }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Select Repository', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.sm),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          constraints: const BoxConstraints(maxHeight: 300),
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: repositories.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final repo = repositories[index] as Map<String, dynamic>;
+              final isSelected = _selectedRepository?['id'] == repo['id'];
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Select Repository', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              constraints: const BoxConstraints(maxHeight: 300),
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: repositories.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final repo = repositories[index];
-                  final isSelected = _selectedRepository?['id'] == repo['id'];
-
-                  return ListTile(
-                    title: Text(repo['full_name']),
-                    subtitle: Text(repo['description'] ?? 'No description', maxLines: 1, overflow: TextOverflow.ellipsis),
-                    trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.green) : null,
-                    selected: isSelected,
-                    onTap: () {
-                      setState(() {
-                        _selectedRepository = repo;
-                        _currentStep = 2; // Advance to next step
-                      });
-                    },
-                  );
+              return ListTile(
+                title: Text(repo['full_name'] as String),
+                subtitle: Text(repo['description'] as String? ?? 'No description', maxLines: 1, overflow: TextOverflow.ellipsis),
+                trailing: isSelected ? const Icon(Icons.check_circle, color: Colors.green) : null,
+                selected: isSelected,
+                onTap: () {
+                  setState(() {
+                    _selectedRepository = repo;
+                    _currentStep = 2; // Advance to next step
+                  });
                 },
-              ),
-            ),
-          ],
-        );
-      },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

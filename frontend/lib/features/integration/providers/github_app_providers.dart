@@ -10,3 +10,8 @@ final githubRepositoriesProvider = FutureProvider.family.autoDispose<List<Map<St
   final api = ref.watch(githubAppApiProvider);
   return await api.getRepositories(installationId);
 });
+
+final githubAllRepositoriesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final api = ref.watch(githubAppApiProvider);
+  return await api.getAllRepositories();
+});

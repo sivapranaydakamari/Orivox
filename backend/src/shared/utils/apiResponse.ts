@@ -10,11 +10,17 @@ export class ApiResponse {
     });
   }
 
-  static error(res: Response, error: string, details: unknown = null, statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR) {
+  static error(res: Response, error: string | { code: string; message: string }, details: unknown = null, statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR) {
+    const errorObj = typeof error === 'string' 
+      ? { code: 'UNKNOWN_ERROR', message: error } 
+      : { code: error.code, message: error.message };
+
+    // Do not log or expose stack traces to client in production
+    // Internal logs handle the actual stack trace.
     return res.status(statusCode).json({
       success: false,
-      error,
-      details,
+      error: errorObj,
+      ...(details ? { details } : {}), // only include details if truthy to avoid leaking nulls
     });
   }
 }

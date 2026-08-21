@@ -33,48 +33,8 @@ class SyncDashboardScreen extends ConsumerWidget {
     final pollingStateAsync = ref.watch(syncPollingProvider(repositoryId));
     final actionState = ref.watch(repositoryActionProvider);
 
-    ref.listen<AsyncValue<void>>(
-      repositoryActionProvider,
-      (previous, next) {
-        next.whenOrNull(
-          error: (error, stackTrace) {
-            final cleanMessage = ApiErrorHandler.getMessage(error);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(cleanMessage),
-                action: SnackBarAction(
-                  label: 'Details',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Technical Error Details'),
-                        content: SingleChildScrollView(
-                          child: SelectableText(error.toString()),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Close'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            );
-          },
-          data: (_) {
-            if (previous?.isLoading == true && !next.isLoading) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Action completed successfully')),
-              );
-            }
-          },
-        );
-      },
-    );
+    // Removed raw ScaffoldMessenger for actions.
+    // Errors will be captured by the UI state.
 
     return SaaSLayout(
       title: 'Sync Dashboard',
@@ -239,6 +199,29 @@ class SyncDashboardScreen extends ConsumerWidget {
                   const SectionHeader(title: 'Current Running Job'),
                   JobDetailsCard(job: pollingStateAsync.value!.currentJob!),
                   const SizedBox(height: AppSpacing.lg),
+                ],
+
+                if (actionState.hasError) ...[
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            ApiErrorHandler.getMessage(actionState.error),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                 ],
 
                 if (permissions.canSyncRepository(repository.projectId) && currentSyncStatus == SyncStatus.failed) ...[

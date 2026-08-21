@@ -6,14 +6,31 @@ import { auditService } from '../../audit/service/audit.service';
 import { userRepository } from '../../user/repository/user.repository';
 import { OrgRole } from '../../user/model/user.model';
 import { env } from '../../../config/env';
+import { logger } from '../../../config/logger';
+
+import { queueService } from '../../jobs/queue.service';
+import { JobType } from '../../jobs/types/job.types';
 
 export class RepositoryController {
   create = asyncHandler(async (req: Request, res: Response) => {
-    const repository = await repositoryService.createRepository(req.body);
+    // Override initial status to PENDING
+    const payload = { ...req.body, syncStatus: 'PENDING' };
+    const repository = await repositoryService.createRepository(payload);
     
     await auditService.logAction(req.user!.organizationId, 'REPOSITORY_ADDED', 'REPOSITORY', repository._id.toString(), req.user!.id, repository.projectId.toString());
     
-    ApiResponse.success(res, repository, 'Repository created successfully', 201);
+    // Enqueue initial sync
+    try {
+      await queueService.enqueue(
+        JobType.SYNC_REPOSITORY, 
+        { repositoryId: repository._id.toString() }
+      );
+    } catch (err: any) {
+      logger.error({ err, repositoryId: repository._id.toString() }, 'Failed to enqueue initial sync job');
+      // We don't fail the creation, but it remains PENDING.
+    }
+    
+    ApiResponse.success(res, repository, 'Repository connected and sync queued', 202);
   });
 
   getAll = asyncHandler(async (req: Request, res: Response) => {

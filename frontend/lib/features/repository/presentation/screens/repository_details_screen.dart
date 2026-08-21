@@ -8,6 +8,7 @@ import '../../../../core/widgets/indicators.dart';
 import '../../../../core/widgets/layout.dart';
 import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/saas_layout.dart';
+import '../../../../core/network/api_error_handler.dart';
 import '../../../../core/providers/permissions_provider.dart';
 import '../providers/repository_providers.dart';
 import '../widgets/sync_status_badge.dart';
@@ -29,26 +30,8 @@ class RepositoryDetailsScreen extends ConsumerWidget {
     final actionState = ref.watch(repositoryActionProvider);
     final theme = Theme.of(context);
 
-    // Listen for action state changes to show snackbar
-    ref.listen<AsyncValue<void>>(
-      repositoryActionProvider,
-      (previous, next) {
-        next.whenOrNull(
-          error: (error, stackTrace) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Action failed: $error')),
-            );
-          },
-          data: (_) {
-            if (previous?.isLoading == true && !next.isLoading) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Action completed successfully')),
-              );
-            }
-          },
-        );
-      },
-    );
+    // Removed raw ScaffoldMessenger for actions.
+    // Errors will be captured by the UI state.
 
     return SaaSLayout(
       title: 'Repository Details',
@@ -167,6 +150,29 @@ class RepositoryDetailsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
+
+                if (actionState.hasError) ...[
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            ApiErrorHandler.getMessage(actionState.error),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
 
                 if (permissions.canSyncRepository(repository.projectId) || permissions.canEditRepository(repository.projectId))
                   const SectionHeader(title: 'Actions'),

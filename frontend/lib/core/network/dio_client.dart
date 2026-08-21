@@ -13,8 +13,9 @@ final dioProvider = Provider<Dio>((ref) {
   final storage = ref.watch(secureStorageProvider);
   final dio = Dio(BaseOptions(
     baseUrl: Env.apiBaseUrl,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
+    sendTimeout: const Duration(seconds: 15),
   ));
 
   dio.interceptors.addAll([

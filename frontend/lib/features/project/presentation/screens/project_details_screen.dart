@@ -202,16 +202,12 @@ class ProjectDetailsScreen extends ConsumerWidget {
             runSpacing: AppSpacing.md,
             children: [
               Text('Connected Repositories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              PermissionTooltip(
-                hasPermission: permissions.canCreateRepository(projectId),
-                requiredRole: 'Project Manager',
-                child: SizedBox(
-                  width: 200,
-                  child: PrimaryButton(
-                    text: 'Connect Repository',
-                    icon: Icons.add,
-                    onPressed: permissions.canCreateRepository(projectId) ? () => context.push('/projects/$projectId/repositories/new') : null,
-                  ),
+              SizedBox(
+                width: 220,
+                child: PrimaryButton(
+                  text: permissions.canCreateRepository(projectId) ? 'Connect Repository' : 'View GitHub Connection',
+                  icon: permissions.canCreateRepository(projectId) ? Icons.add : Icons.visibility,
+                  onPressed: () => context.push('/projects/$projectId/repositories/new'),
                 ),
               ),
             ],

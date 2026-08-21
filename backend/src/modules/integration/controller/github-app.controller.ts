@@ -36,7 +36,11 @@ export class GitHubAppController {
    */
   async handleCallback(req: Request, res: Response) {
     try {
-      const { installation_id, setup_action, state } = req.query;
+      const installation_id = req.query.installation_id as string;
+      const setup_action = req.query.setup_action as string;
+      const state = req.query.state as string;
+
+      logger.info({ installation_id, setup_action }, 'GitHub App callback received');
 
       if (!installation_id || (setup_action !== 'install' && setup_action !== 'update')) {
         return res.status(400).send('Invalid callback parameters');
@@ -46,6 +50,7 @@ export class GitHubAppController {
       try {
         const decodedState = JSON.parse(Buffer.from(state as string, 'base64').toString('utf-8'));
         organizationId = decodedState.organizationId;
+        logger.info({ organizationId }, 'Resolved authenticated Orivox organization');
       } catch (err) {
         return res.status(400).send('Invalid state parameter');
       }
@@ -54,14 +59,12 @@ export class GitHubAppController {
         return res.status(400).send('Missing organization context');
       }
 
+      logger.info({ installation_id }, 'Starting repository fetch from GitHub');
       // We need to fetch details about this installation from GitHub using our App JWT
       const token = await githubClient.getInstallationToken(Number(installation_id));
       
-      // Fetch the installation details directly (optional, but good to store account info)
-      // Since we just need to record it, we can actually just query the github api
-      // However, we don't strictly need it if we just want to save the installationId
-      // Let's at least get the repositories to get the owner name
       const repos = await githubClient.listInstallationRepositories(Number(installation_id));
+      logger.info({ repositoryCount: repos.repositories?.length }, 'GitHub API repository fetch completed');
       
       let accountId = 0;
       let accountLogin = 'Unknown';
@@ -86,6 +89,8 @@ export class GitHubAppController {
         { upsert: true, new: true }
       );
 
+      logger.info({ installation_id, organizationId }, 'Installation successfully persisted to organization');
+
       res.send(`
         <html>
           <head>
@@ -107,6 +112,7 @@ export class GitHubAppController {
       `);
     } catch (error: any) {
       logger.error({ error }, 'Failed to handle GitHub App callback');
+      logger.info({ installation_id: req.query.installation_id }, 'GitHub API repository fetch failure during callback');
       res.send(`
         <html>
           <head><title>GitHub Connection Failed</title></head>
@@ -191,7 +197,9 @@ export class GitHubAppController {
       const installationsWithRepos = await Promise.all(
         installations.map(async (installation) => {
           try {
+            logger.info({ installationId: installation.installationId }, 'Starting repository fetch from GitHub');
             const data = await githubClient.listInstallationRepositories(installation.installationId);
+            logger.info({ repositoryCount: data.repositories?.length }, 'GitHub API repository fetch completed');
             const repositories = data.repositories.map((repo: any) => ({
               id: repo.id,
               name: repo.name,
@@ -226,10 +234,10 @@ export class GitHubAppController {
         })
       );
 
-      return ApiResponse.success(res, { installations: installationsWithRepos }, 'Repositories retrieved');
+      return ApiResponse.success(res, installationsWithRepos, 'Repositories retrieved');
     } catch (error: any) {
       logger.error({ error }, 'Failed to list all repositories');
-      return ApiResponse.error(res, error.message, null, 500);
+      return ApiResponse.error(res, { code: 'GITHUB_REPOSITORY_FETCH_FAILED', message: 'Unable to fetch repositories from GitHub. Please try again.' }, null, 500);
     }
   }
   /**

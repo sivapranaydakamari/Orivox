@@ -13,7 +13,7 @@ export class GitHubAppController {
    */
   async getInstallUrl(req: Request, res: Response) {
     try {
-      const organizationId = (req as any).organizationId;
+      const organizationId = req.user?.organizationId;
       const appName = env.GITHUB_APP_NAME;
 
       if (!appName) {
@@ -130,7 +130,7 @@ export class GitHubAppController {
    */
   async listInstallations(req: Request, res: Response) {
     try {
-      const organizationId = (req as any).organizationId;
+      const organizationId = req.user?.organizationId;
       
       const installations = await GitHubInstallation.find({ 
         organizationId,
@@ -149,7 +149,7 @@ export class GitHubAppController {
    */
   async listRepositories(req: Request, res: Response) {
     try {
-      const organizationId = (req as any).organizationId;
+      const organizationId = req.user?.organizationId;
       const { installationId } = req.params;
 
       const installation = await GitHubInstallation.findOne({
@@ -187,7 +187,7 @@ export class GitHubAppController {
    */
   async listAllRepositories(req: Request, res: Response) {
     try {
-      const organizationId = (req as any).organizationId;
+      const organizationId = req.user?.organizationId;
       
       const installations = await GitHubInstallation.find({ 
         organizationId,
@@ -246,7 +246,7 @@ export class GitHubAppController {
    */
   async reconcileInstallation(req: Request, res: Response) {
     try {
-      const organizationId = (req as any).organizationId;
+      const organizationId = req.user?.organizationId;
       const { installationId } = req.body;
 
       if (!installationId) {

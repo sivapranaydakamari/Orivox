@@ -39,4 +39,11 @@ router.get(
   githubAppController.listAllRepositories.bind(githubAppController)
 );
 
+// Reconcile an existing installation manually
+router.post(
+  '/installations/reconcile',
+  requireOrgRole([OrgRole.ORG_ADMIN]),
+  githubAppController.reconcileInstallation.bind(githubAppController)
+);
+
 export default router;

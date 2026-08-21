@@ -38,7 +38,7 @@ export class GitHubAppController {
     try {
       const { installation_id, setup_action, state } = req.query;
 
-      if (!installation_id || setup_action !== 'install') {
+      if (!installation_id || (setup_action !== 'install' && setup_action !== 'update')) {
         return res.status(400).send('Invalid callback parameters');
       }
 
@@ -229,6 +229,64 @@ export class GitHubAppController {
       return ApiResponse.success(res, { installations: installationsWithRepos }, 'Repositories retrieved');
     } catch (error: any) {
       logger.error({ error }, 'Failed to list all repositories');
+      return ApiResponse.error(res, error.message, null, 500);
+    }
+  }
+  /**
+   * Reconciles/links an existing GitHub installation to the current organization.
+   * Useful when an installation was created but the callback failed or state was lost.
+   */
+  async reconcileInstallation(req: Request, res: Response) {
+    try {
+      const organizationId = (req as any).organizationId;
+      const { installationId } = req.body;
+
+      if (!installationId) {
+        return ApiResponse.error(res, 'installationId is required', null, 400);
+      }
+
+      // Check if already claimed by this organization
+      const existing = await GitHubInstallation.findOne({ installationId: Number(installationId) });
+      if (existing && existing.organizationId.toString() !== organizationId) {
+        return ApiResponse.error(res, 'Installation already claimed by another organization', null, 403);
+      }
+
+      // Verify the installation exists on GitHub and we have access
+      let repos;
+      try {
+        const token = await githubClient.getInstallationToken(Number(installationId));
+        repos = await githubClient.listInstallationRepositories(Number(installationId));
+      } catch (err) {
+        logger.error({ err, installationId }, 'Failed to verify installation ownership via GitHub');
+        return ApiResponse.error(res, 'Could not verify installation with GitHub', null, 400);
+      }
+
+      let accountId = 0;
+      let accountLogin = 'Unknown';
+      let accountType = 'Unknown';
+
+      if (repos.repositories && repos.repositories.length > 0) {
+        const owner = repos.repositories[0].owner;
+        accountId = owner.id;
+        accountLogin = owner.login;
+        accountType = owner.type;
+      }
+
+      const installation = await GitHubInstallation.findOneAndUpdate(
+        { installationId: Number(installationId) },
+        {
+          organizationId,
+          githubAccountId: accountId,
+          githubAccountLogin: accountLogin,
+          githubAccountType: accountType,
+          status: GitHubInstallationStatus.ACTIVE,
+        },
+        { upsert: true, new: true }
+      );
+
+      return ApiResponse.success(res, { installation }, 'Installation reconciled successfully');
+    } catch (error: any) {
+      logger.error({ error }, 'Failed to reconcile installation');
       return ApiResponse.error(res, error.message, null, 500);
     }
   }

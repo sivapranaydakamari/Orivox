@@ -8,6 +8,23 @@ const router = Router();
 // Callback from GitHub after installation (public route)
 router.get('/callback', githubAppController.handleCallback.bind(githubAppController));
 
+// Temporary debug endpoint to diagnose Render environment variable mangling
+router.get('/debug-key', (req, res) => {
+  const pk = process.env.GITHUB_APP_PRIVATE_KEY || '';
+  // Safely print the length and the character codes of the start/end to avoid exposing the actual key
+  const startChars = pk.substring(0, 35).split('').map(c => c === '\n' ? '\\n' : c === '\r' ? '\\r' : c).join('');
+  const endChars = pk.substring(pk.length - 35).split('').map(c => c === '\n' ? '\\n' : c === '\r' ? '\\r' : c).join('');
+  res.json({
+    length: pk.length,
+    start: startChars,
+    end: endChars,
+    includesNewline: pk.includes('\n'),
+    includesEscapedNewline: pk.includes('\\n'),
+    includesQuote: pk.includes('"') || pk.includes("'"),
+    exactChars: pk.split('').map(c => c.charCodeAt(0)), // Return all char codes for absolute certainty
+  });
+});
+
 // These routes require the user to be logged in and inside an organization context
 router.use(requireAuth);
 router.use(requireOrganization);

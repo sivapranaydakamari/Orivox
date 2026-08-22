@@ -39,24 +39,21 @@ export class GitHubClient {
       throw new Error('GitHub App credentials are not configured');
     }
 
-    // Handle escaped newlines from environment variables
-    let privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+    // Bulletproof RSA key auto-formatter
+    // Extracts the base64 body regardless of how Render or the user mangled the whitespace,
+    // newlines, quotes, or escaping, and reconstructs a perfect PEM file.
+    let privateKey = privateKeyRaw;
+    const match = privateKey.match(/-----BEGIN [^-]+-----(.*)-----END [^-]+-----/s);
     
-    // Strip leading/trailing quotes if accidentally included
-    privateKey = privateKey.replace(/^["']|["']$/g, '');
-
-    // Auto-fix if Render stripped actual newlines (user pasted as a single line)
-    if (!privateKey.includes('\n')) {
-      privateKey = privateKey
-        .replace(/-----BEGIN RSA PRIVATE KEY-----/i, '-----BEGIN RSA PRIVATE KEY-----\n')
-        .replace(/-----END RSA PRIVATE KEY-----/i, '\n-----END RSA PRIVATE KEY-----');
-      
-      const lines = privateKey.split('\n');
-      if (lines.length === 3) {
-         // Remove any stray spaces in the base64 body that might have been inserted when collapsing newlines
-         lines[1] = lines[1].replace(/\s+/g, '');
-         privateKey = lines.join('\n');
-      }
+    if (match) {
+      // Remove all whitespace (spaces, tabs, newlines, carriage returns, escaped \n)
+      const base64Body = match[1].replace(/\\n/g, '').replace(/\s+/g, '');
+      // Standard PEM format splits base64 into 64-character lines
+      const chunks = base64Body.match(/.{1,64}/g) || [];
+      privateKey = `-----BEGIN RSA PRIVATE KEY-----\n${chunks.join('\n')}\n-----END RSA PRIVATE KEY-----`;
+    } else {
+      // Fallback in case it doesn't have the headers (unlikely)
+      privateKey = privateKey.replace(/\\n/g, '\n').replace(/^["']|["']$/g, '');
     }
 
     const now = Math.floor(Date.now() / 1000);

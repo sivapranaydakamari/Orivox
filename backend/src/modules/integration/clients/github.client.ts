@@ -41,6 +41,9 @@ export class GitHubClient {
 
     // Handle escaped newlines from environment variables
     let privateKey = privateKeyRaw.replace(/\\n/g, '\n');
+    
+    // Strip leading/trailing quotes if accidentally included
+    privateKey = privateKey.replace(/^["']|["']$/g, '');
 
     // Auto-fix if Render stripped actual newlines (user pasted as a single line)
     if (!privateKey.includes('\n')) {

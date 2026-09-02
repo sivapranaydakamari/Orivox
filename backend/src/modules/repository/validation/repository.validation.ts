@@ -7,9 +7,17 @@ const githubUrlRegex = /^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9_.-]+\/[a-
 export const createRepositorySchema = z.object({
   body: z.object({
     projectId: z.string().regex(objectIdRegex, 'Invalid Project ID'),
-    repositoryUrl: z.string().regex(githubUrlRegex, 'Invalid GitHub Repository URL'),
+    repositoryUrl: z.string().regex(githubUrlRegex, 'Invalid GitHub Repository URL').optional().nullable(),
     repositoryName: z.string().min(1).max(100),
     provider: z.string().optional(),
+    githubInstallationId: z.string().optional().nullable(),
+    githubRepositoryId: z.number().optional().nullable(),
+    githubRepositoryFullName: z.string().optional().nullable(),
+    sourceConfiguration: z.object({
+      code: z.boolean(),
+      docs: z.boolean(),
+      prs: z.boolean(),
+    }).optional().nullable(),
   }),
 });
 

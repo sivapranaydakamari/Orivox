@@ -148,6 +148,7 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> with 
       githubInstallationId: _selectedInstallation!['installationId'] as String,
       githubRepositoryId: _selectedRepository!['id'] as int,
       githubRepositoryFullName: _selectedRepository!['full_name'] as String,
+      repositoryUrl: 'https://github.com/${_selectedRepository!['full_name']}',
       sourceConfiguration: SourceConfigurationDto(
         code: _syncCode,
         docs: _syncDocs,

@@ -29,6 +29,10 @@ class AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
+      if (err.requestOptions.path.contains('/auth/refresh')) {
+        return handler.next(err);
+      }
+
       if (_isRefreshing) {
         final completer = Completer<Response>();
         _queue.add(completer);

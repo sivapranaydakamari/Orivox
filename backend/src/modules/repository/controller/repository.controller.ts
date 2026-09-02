@@ -13,8 +13,8 @@ import { JobType } from '../../jobs/types/job.types';
 
 export class RepositoryController {
   create = asyncHandler(async (req: Request, res: Response) => {
-    // Override initial status to PENDING
-    const payload = { ...req.body, syncStatus: 'PENDING' };
+    // Override initial status to CONNECTED
+    const payload = { ...req.body, syncStatus: 'CONNECTED' };
     const repository = await repositoryService.createRepository(payload);
     
     await auditService.logAction(req.user!.organizationId, 'REPOSITORY_ADDED', 'REPOSITORY', repository._id.toString(), req.user!.id, repository.projectId.toString());

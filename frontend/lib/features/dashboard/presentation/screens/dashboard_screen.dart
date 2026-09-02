@@ -83,7 +83,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ref.read(activeOrgProvider.notifier).setActiveOrg(targetOrgId);
           });
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          // DO NOT return a spinner here. The activeOrgProvider will update and rebuild.
+          // Let SaaSLayout render with the targetOrgId temporarily if needed.
         }
 
         return SaaSLayout(

@@ -26,27 +26,7 @@ router.get('/debug-key', (req, res) => {
   });
 });
 
-// Temporary debug endpoint to fix user permissions
-router.get('/make-admin', async (req, res) => {
-  const email = req.query.email as string;
-  if (!email || typeof email !== 'string') return res.status(400).json({ error: 'Missing or invalid email query param' });
-  
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    
-    // Update all memberships to ORG_ADMIN
-    user.memberships.forEach(m => {
-      m.orgRole = OrgRole.ORG_ADMIN;
-    });
-    
-    await user.save();
-    
-    res.json({ message: `Successfully made ${email} an ORG_ADMIN in all their orgs`, user });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
-});
+// Removed /make-admin debug endpoint for security
 
 // These routes require the user to be logged in and inside an organization context
 router.use(requireAuth);

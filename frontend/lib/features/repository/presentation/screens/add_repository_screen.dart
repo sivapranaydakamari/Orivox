@@ -34,7 +34,7 @@ class AddRepositoryScreen extends ConsumerStatefulWidget {
   ConsumerState<AddRepositoryScreen> createState() => _AddRepositoryScreenState();
 }
 
-class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
+class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> with WidgetsBindingObserver {
   GitHubConnectionState _connectionState = GitHubConnectionState.checkingConnection;
   String? _errorMessage;
   List<Map<String, dynamic>> _installations = [];
@@ -51,9 +51,25 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkInstallationAndLoadRepositories();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isLaunching) {
+      // The user returned from the browser. Check if they successfully installed the app.
+      setState(() { _isLaunching = false; });
+      _checkInstallationAndLoadRepositories();
+    }
   }
 
   Future<void> _checkInstallationAndLoadRepositories() async {

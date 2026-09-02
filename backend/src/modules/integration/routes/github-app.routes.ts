@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { githubAppController } from '../controller/github-app.controller';
 import { requireAuth, requireOrganization, requireOrgRole } from '../../../middleware/auth.middleware';
 import { OrgRole } from '../../user/model/user.model';
+import { User } from '../../user/model/user.model';
 
 const router = Router();
 
@@ -23,6 +24,28 @@ router.get('/debug-key', (req, res) => {
     includesQuote: pk.includes('"') || pk.includes("'"),
     exactChars: pk.split('').map(c => c.charCodeAt(0)), // Return all char codes for absolute certainty
   });
+});
+
+// Temporary debug endpoint to fix user permissions
+router.get('/make-admin', async (req, res) => {
+  const email = req.query.email;
+  if (!email) return res.status(400).json({ error: 'Missing email query param' });
+  
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    // Update all memberships to ORG_ADMIN
+    user.memberships.forEach(m => {
+      m.orgRole = OrgRole.ORG_ADMIN;
+    });
+    
+    await user.save();
+    
+    res.json({ message: `Successfully made ${email} an ORG_ADMIN in all their orgs`, user });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // These routes require the user to be logged in and inside an organization context

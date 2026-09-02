@@ -28,8 +28,8 @@ router.get('/debug-key', (req, res) => {
 
 // Temporary debug endpoint to fix user permissions
 router.get('/make-admin', async (req, res) => {
-  const email = req.query.email;
-  if (!email) return res.status(400).json({ error: 'Missing email query param' });
+  const email = req.query.email as string;
+  if (!email || typeof email !== 'string') return res.status(400).json({ error: 'Missing or invalid email query param' });
   
   try {
     const user = await User.findOne({ email });

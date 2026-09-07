@@ -30,7 +30,7 @@ const GitHubInstallationSchema: Schema = new Schema(
     installationId: {
       type: Number,
       required: true,
-      unique: true,
+      index: true,
     },
     githubAccountId: {
       type: Number,
@@ -64,7 +64,7 @@ const GitHubInstallationSchema: Schema = new Schema(
   }
 );
 
-// Allow an organization to have multiple installations if they have multiple github accounts, 
-// but usually it's one-to-one or one-to-many. The installationId is globally unique.
+// Allow each organization to have installations. The installationId is unique per organization.
+GitHubInstallationSchema.index({ organizationId: 1, installationId: 1 }, { unique: true });
 
 export const GitHubInstallation = mongoose.model<IGitHubInstallation>('GitHubInstallation', GitHubInstallationSchema);

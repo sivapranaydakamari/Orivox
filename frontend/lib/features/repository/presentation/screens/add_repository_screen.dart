@@ -263,8 +263,11 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> with 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
               children: [
                 Text('GitHub Connection', style: Theme.of(context).textTheme.titleMedium),
                 if (_connectionState != GitHubConnectionState.checkingConnection)

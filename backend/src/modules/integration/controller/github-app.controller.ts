@@ -78,9 +78,10 @@ export class GitHubAppController {
       }
 
       await GitHubInstallation.findOneAndUpdate(
-        { installationId: Number(installation_id) },
+        { organizationId, installationId: Number(installation_id) },
         {
           organizationId,
+          installationId: Number(installation_id),
           githubAccountId: accountId,
           githubAccountLogin: accountLogin,
           githubAccountType: accountType,
@@ -257,12 +258,6 @@ export class GitHubAppController {
         return ApiResponse.error(res, 'installationId is required', null, 400);
       }
 
-      // Check if already claimed by this organization
-      const existing = await GitHubInstallation.findOne({ installationId: Number(installationId) });
-      if (existing && existing.organizationId.toString() !== organizationId) {
-        return ApiResponse.error(res, 'Installation already claimed by another organization', null, 403);
-      }
-
       // Verify the installation exists on GitHub and we have access
       let repos;
       try {
@@ -270,7 +265,7 @@ export class GitHubAppController {
         repos = await githubClient.listInstallationRepositories(Number(installationId));
       } catch (err) {
         logger.error({ err, installationId }, 'Failed to verify installation ownership via GitHub');
-        return ApiResponse.error(res, 'Could not verify installation with GitHub', null, 400);
+        return ApiResponse.error(res, 'Could not verify installation with GitHub. Please ensure Orivox Knowledge is installed on your GitHub account.', null, 400);
       }
 
       let accountId = 0;
@@ -285,9 +280,10 @@ export class GitHubAppController {
       }
 
       const installation = await GitHubInstallation.findOneAndUpdate(
-        { installationId: Number(installationId) },
+        { organizationId, installationId: Number(installationId) },
         {
           organizationId,
+          installationId: Number(installationId),
           githubAccountId: accountId,
           githubAccountLogin: accountLogin,
           githubAccountType: accountType,

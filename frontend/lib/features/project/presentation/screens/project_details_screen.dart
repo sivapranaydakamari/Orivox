@@ -41,6 +41,11 @@ class ProjectDetailsScreen extends ConsumerWidget {
           child: SaaSLayout(
             title: project.name,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.people_outline),
+                tooltip: 'Project Members',
+                onPressed: () => context.push('/projects/$id/members'),
+              ),
               if (permissions.canDeleteProject(id))
                 IconButton(
                   icon: const Icon(Icons.delete_outline),

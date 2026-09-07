@@ -13,6 +13,7 @@ import '../../features/organization/presentation/screens/organization_details_sc
 import '../../features/organization/presentation/screens/organization_members_screen.dart';
 import '../../features/project/presentation/screens/project_list_screen.dart';
 import '../../features/project/presentation/screens/project_details_screen.dart';
+import '../../features/project/presentation/screens/project_members_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/repository/presentation/screens/repository_list_screen.dart';
 import '../../features/repository/presentation/screens/repository_details_screen.dart';
@@ -84,7 +85,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           return null; // Let them stay on auth routes
         },
         loading: () => null,
-        error: (_) => '/login', // Fallback to login on error
+        error: (_) {
+          if (isAuthRoute) {
+            return null; // Stay on auth routes (login, register, forgot-password) to show error feedback
+          }
+          return '/login'; // Fallback to login for protected routes
+        },
         orElse: () => null,
       );
     },
@@ -158,6 +164,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/projects/:id',
         builder: (context, state) => ProjectDetailsScreen(id: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/projects/:id/members',
+        builder: (context, state) => ProjectMembersScreen(projectId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/repositories',

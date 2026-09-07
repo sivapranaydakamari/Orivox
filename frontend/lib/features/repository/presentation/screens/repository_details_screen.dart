@@ -37,10 +37,25 @@ class RepositoryDetailsScreen extends ConsumerWidget {
       title: 'Repository Details',
       actions: [
         repositoryAsync.maybeWhen(
+          data: (repository) => IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Back to Project',
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/projects/${repository.projectId}');
+              }
+            },
+          ),
+          orElse: () => const SizedBox.shrink(),
+        ),
+        repositoryAsync.maybeWhen(
           data: (repository) => permissions.canDeleteRepository(repository.projectId)
               ? IconButton(
                   icon: const Icon(Icons.delete_outline),
                   color: theme.colorScheme.error,
+                  tooltip: 'Delete Repository',
                   onPressed: () => _showDeleteDialog(context, ref),
                 )
               : const SizedBox.shrink(),
@@ -232,7 +247,11 @@ class RepositoryDetailsScreen extends ConsumerWidget {
           Navigator.of(context).pop();
           ref.read(repositoryActionProvider.notifier).deleteRepository(repositoryId).then((_) {
             if (context.mounted) {
-              context.pop(); // Go back to list after delete
+              if (context.canPop()) {
+                context.pop(); // Go back to list after delete
+              } else {
+                context.go('/projects');
+              }
             }
           });
         },

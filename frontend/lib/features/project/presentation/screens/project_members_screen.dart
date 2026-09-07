@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/saas_layout.dart';
 import '../../../../core/widgets/permission_tooltip.dart';
 import '../../../../core/providers/permissions_provider.dart';
@@ -91,6 +92,17 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
     return SaaSLayout(
       title: 'Project Members & Access',
       actions: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Project',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/projects/${widget.projectId}');
+            }
+          },
+        ),
         PermissionTooltip(
           hasPermission: hasProjectAdminAccess,
           requiredRole: 'PROJECT_ADMIN',

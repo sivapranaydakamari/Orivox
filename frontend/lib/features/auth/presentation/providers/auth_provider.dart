@@ -5,6 +5,7 @@ import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/datasources/auth_remote_data_source.dart';
 import '../../../../core/network/dio_client.dart'; // Assume this exists
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/network/api_error_handler.dart';
 
 // Providers for dependencies
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
@@ -42,6 +43,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState.unauthenticated();
   }
 
+  void clearError() {
+    state.maybeWhen(
+      error: (_) => state = const AuthState.unauthenticated(),
+      orElse: () {},
+    );
+  }
+
   Future<void> checkAuthStatus() async {
     state = const AuthState.loading();
     try {
@@ -62,7 +70,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = await _authRepository.login(email, password);
       state = AuthState.authenticated(user);
     } catch (e) {
-      state = AuthState.error(e.toString());
+      state = AuthState.error(ApiErrorHandler.getMessage(e));
     }
   }
 
@@ -72,7 +80,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = await _authRepository.register(name, email, password);
       state = AuthState.authenticated(user);
     } catch (e) {
-      state = AuthState.error(e.toString());
+      state = AuthState.error(ApiErrorHandler.getMessage(e));
     }
   }
 
@@ -93,7 +101,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Stay unauthenticated but remove error/loading state
       state = const AuthState.unauthenticated();
     } catch (e) {
-      state = AuthState.error(e.toString());
+      state = AuthState.error(ApiErrorHandler.getMessage(e));
     }
   }
 }

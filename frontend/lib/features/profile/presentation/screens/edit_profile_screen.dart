@@ -39,7 +39,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         await ref.read(profileActionProvider.notifier).updateProfile(_nameController.text.trim());
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated successfully')));
-          context.pop();
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/profile');
+          }
         }
       } catch (e) {
         if (mounted) {

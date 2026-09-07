@@ -37,7 +37,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password changed successfully')));
-          context.pop();
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/profile');
+          }
         }
       } catch (e) {
         if (mounted) {

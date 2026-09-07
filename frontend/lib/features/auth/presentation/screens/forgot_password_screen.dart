@@ -9,6 +9,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/utils/responsive.dart';
 
+import '../../../../core/widgets/orivox_logo.dart';
+
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -19,6 +21,15 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  bool _isSubmitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authNotifierProvider.notifier).clearError();
+    });
+  }
 
   @override
   void dispose() {
@@ -28,6 +39,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   void _resetPassword() {
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() {
+        _isSubmitted = true;
+      });
       ref.read(authNotifierProvider.notifier).forgotPassword(_emailController.text);
     }
   }
@@ -37,13 +51,21 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       next.maybeWhen(
         unauthenticated: () {
-          // Since we mocked forgotPassword to go back to unauthenticated on success
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password reset link sent!')),
-          );
-          context.pop();
+          // Only pop if the user actually clicked Send Reset Link and received success
+          if (_isSubmitted) {
+            _isSubmitted = false;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Password reset link sent! Please check your inbox.')),
+            );
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/login');
+            }
+          }
         },
         error: (message) {
+          _isSubmitted = false;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(message)),
           );
@@ -62,7 +84,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/login');
+            }
+          },
         ),
       ),
       body: Center(
@@ -85,6 +113,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Center(
+            child: OrivoxLogo(height: 72, isHero: true),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Reset Password',
             style: theme.textTheme.headlineMedium?.copyWith(
@@ -118,6 +150,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             text: 'Send Reset Link',
             isLoading: isLoading,
             onPressed: _resetPassword,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Center(
+            child: TextButton.icon(
+              icon: const Icon(Icons.arrow_back, size: 16),
+              label: const Text('Back to Sign In'),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/login');
+                }
+              },
+            ),
           ),
         ],
       ),

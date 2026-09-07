@@ -38,6 +38,17 @@ class SyncDashboardScreen extends ConsumerWidget {
     return SaaSLayout(
       title: 'Sync Dashboard',
       actions: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Repository',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/repositories/$repositoryId');
+            }
+          },
+        ),
         repositoryAsync.maybeWhen(
           data: (repository) {
             if (permissions.canDeleteRepository(repository.projectId)) {

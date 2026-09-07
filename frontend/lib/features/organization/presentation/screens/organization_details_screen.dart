@@ -27,9 +27,14 @@ class OrganizationDetailsScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.delete),
               color: Theme.of(context).colorScheme.error,
+              tooltip: 'Delete Organization',
               onPressed: () {
                 ref.read(organizationListProvider.notifier).deleteOrganization(id);
-                context.pop();
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/organizations');
+                }
               },
             ),
         ],
@@ -63,7 +68,11 @@ class OrganizationDetailsScreen extends ConsumerWidget {
                             id,
                             nameController.text,
                           );
-                      context.pop();
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/organizations');
+                      }
                     },
                   ),
               ],

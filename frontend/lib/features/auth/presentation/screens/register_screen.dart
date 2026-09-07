@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/auth_state.dart';
 import '../../../../core/widgets/inputs.dart';
 import '../../../../core/widgets/buttons.dart';
+import '../../../../core/widgets/orivox_logo.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/utils/responsive.dart';
@@ -86,6 +87,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Center(
+            child: OrivoxLogo(height: 72, isHero: true),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Create Account',
             style: theme.textTheme.headlineMedium?.copyWith(

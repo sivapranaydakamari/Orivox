@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_spacing.dart';
 
+import '../../../../core/widgets/orivox_logo.dart';
+
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -8,7 +10,7 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('About'),
+        title: const Text('About Orivox'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -18,13 +20,17 @@ class AboutScreen extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
               child: Column(
                 children: [
-                  Icon(Icons.rocket_launch, size: 64, color: Colors.blue),
+                  OrivoxLogo(height: 72, isHero: true),
                   SizedBox(height: AppSpacing.md),
                   Text(
                     'Orivox Platform',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  Text('Version 1.0.0'),
+                  SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Engineering Intelligence SaaS • Version 1.0.0',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -52,7 +58,7 @@ class AboutScreen extends StatelessWidget {
                 context: context,
                 applicationName: 'Orivox',
                 applicationVersion: '1.0.0',
-                applicationIcon: const Icon(Icons.rocket_launch, size: 48),
+                applicationIcon: const OrivoxLogo(height: 48),
               );
             },
           ),

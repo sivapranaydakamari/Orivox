@@ -94,10 +94,8 @@ const getProjectIdFromRequest = (req: Request): string | undefined => {
 
 export const requireProjectAccess = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const scope = req.body?.scope;
     const projectId = getProjectIdFromRequest(req);
-    if (!projectId) {
-      return ApiResponse.error(res, 'Project ID required for this action', null, 400);
-    }
 
     const user = await userRepository.findById(req.user!.id);
     if (!user) return ApiResponse.error(res, 'User not found', null, 401);
@@ -105,6 +103,14 @@ export const requireProjectAccess = async (req: Request, res: Response, next: Ne
     const orgMembership = user.memberships.find(m => m.organizationId.toString() === req.user!.organizationId);
     if (!orgMembership) {
       return ApiResponse.error(res, 'Access denied to organization', null, 403);
+    }
+
+    if (scope === 'ALL_PROJECTS' && !projectId) {
+      return next();
+    }
+
+    if (!projectId) {
+      return ApiResponse.error(res, 'Project ID required for this action', null, 400);
     }
 
     // Org Admins have access to all projects

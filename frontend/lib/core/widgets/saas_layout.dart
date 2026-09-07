@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'organization_switcher.dart';
+import 'orivox_logo.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../providers/active_org_provider.dart';
 import '../providers/permissions_provider.dart';
@@ -55,23 +56,10 @@ class SaaSLayout extends ConsumerWidget {
             route: '/chat',
             isSelected: currentPath.startsWith('/chat'),
           ),
-          _NavItem(
-            icon: Icons.article_outlined,
-            selectedIcon: Icons.article,
-            label: 'Knowledge Base',
-            route: '/knowledge',
-            isSelected: currentPath.startsWith('/knowledge'),
-          ),
-          _NavItem(
-            icon: Icons.find_in_page_outlined,
-            selectedIcon: Icons.find_in_page,
-            label: 'Documents',
-            route: '/documents',
-            isSelected: currentPath.startsWith('/documents'),
-          ),
         ];
 
         Widget buildNavSection(String sectionTitle, List<_NavItem> items) {
+          final theme = Theme.of(context);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -79,27 +67,29 @@ class SaaSLayout extends ConsumerWidget {
                 padding: const EdgeInsets.only(left: 16, top: 16, bottom: 6),
                 child: Text(
                   sectionTitle.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
+                  style: theme.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade600,
+                    color: theme.colorScheme.onSurfaceVariant,
                     letterSpacing: 1.0,
                   ),
                 ),
               ),
               for (final item in items)
                 ListTile(
-                  leading: Icon(item.isSelected ? item.selectedIcon : item.icon, color: item.isSelected ? Theme.of(context).colorScheme.primary : null),
+                  leading: Icon(
+                    item.isSelected ? item.selectedIcon : item.icon,
+                    color: item.isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                  ),
                   title: Text(
                     item.label,
                     style: TextStyle(
                       fontWeight: item.isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: item.isSelected ? Theme.of(context).colorScheme.primary : null,
+                      color: item.isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                       fontSize: 14,
                     ),
                   ),
                   selected: item.isSelected,
-                  selectedTileColor: Theme.of(context).colorScheme.primary.withAlpha(20),
+                  selectedTileColor: theme.colorScheme.primary.withAlpha(20),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   onTap: () {
                     if (!isDesktop) Navigator.of(context).pop();
@@ -110,28 +100,21 @@ class SaaSLayout extends ConsumerWidget {
           );
         }
 
+        final theme = Theme.of(context);
         final drawerContent = Column(
           children: [
             Container(
-              height: 100,
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+              height: 72,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                border: Border(
+                  bottom: BorderSide(color: theme.colorScheme.outlineVariant),
                 ),
               ),
               child: const Align(
-                alignment: Alignment.bottomLeft,
-                child: Row(
-                  children: [
-                    Icon(Icons.hub_outlined, color: Colors.blueAccent, size: 26),
-                    SizedBox(width: 10),
-                    Text(
-                      'Orivox',
-                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                    ),
-                  ],
-                ),
+                alignment: Alignment.centerLeft,
+                child: OrivoxLogo(height: 44),
               ),
             ),
             Expanded(
@@ -143,7 +126,7 @@ class SaaSLayout extends ConsumerWidget {
                   const Divider(height: 32),
                   if (permissions.isOrgAdmin && activeOrgId != null)
                     ListTile(
-                      leading: const Icon(Icons.business_outlined),
+                      leading: Icon(Icons.business_outlined, color: theme.colorScheme.onSurfaceVariant),
                       title: const Text('Organization Settings', style: TextStyle(fontSize: 14)),
                       onTap: () {
                         if (!isDesktop) Navigator.of(context).pop();
@@ -151,7 +134,7 @@ class SaaSLayout extends ConsumerWidget {
                       },
                     ),
                   ListTile(
-                    leading: const Icon(Icons.person_outline),
+                    leading: Icon(Icons.person_outline, color: theme.colorScheme.onSurfaceVariant),
                     title: const Text('Profile & Settings', style: TextStyle(fontSize: 14)),
                     onTap: () {
                       if (!isDesktop) Navigator.of(context).pop();
@@ -278,30 +261,32 @@ class _AppBreadcrumbBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     if (currentPath == '/dashboard') return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withAlpha(50))),
+        border: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant)),
       ),
       child: Row(
         children: [
           InkWell(
             onTap: () => context.go('/dashboard'),
+            borderRadius: BorderRadius.circular(4),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.home_outlined, size: 16, color: Theme.of(context).colorScheme.primary),
+                Icon(Icons.home_outlined, size: 16, color: theme.colorScheme.primary),
                 const SizedBox(width: 4),
                 Text(
                   'Workspace',
-                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
+                  style: TextStyle(fontSize: 13, color: theme.colorScheme.primary, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6),
-            child: Icon(Icons.chevron_right, size: 14, color: Colors.grey),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Icon(Icons.chevron_right, size: 14, color: theme.colorScheme.onSurfaceVariant),
           ),
           Flexible(
             child: Text(
@@ -311,7 +296,7 @@ class _AppBreadcrumbBanner extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).textTheme.bodyMedium?.color,
+                color: theme.textTheme.bodyMedium?.color,
               ),
             ),
           ),

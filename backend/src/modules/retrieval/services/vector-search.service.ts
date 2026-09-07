@@ -4,7 +4,7 @@ import { logger } from '../../../config/logger';
 
 export interface ISearchFilter {
   organizationId: string | Types.ObjectId;
-  projectId: string | Types.ObjectId;
+  projectId?: string | Types.ObjectId;
 }
 
 export class VectorSearchService {
@@ -19,7 +19,15 @@ export class VectorSearchService {
     logger.info({ filter, topK }, 'VectorSearchService: Executing Atlas Vector Search');
 
     const orgId = new Types.ObjectId(filter.organizationId.toString());
-    const projId = new Types.ObjectId(filter.projectId.toString());
+
+    const filterConditions: any[] = [{ organizationId: orgId }];
+    if (filter.projectId) {
+      filterConditions.push({ projectId: new Types.ObjectId(filter.projectId.toString()) });
+    }
+
+    const atlasFilter = filterConditions.length > 1 
+      ? { $and: filterConditions }
+      : filterConditions[0];
 
     try {
       // Execute the $vectorSearch aggregation pipeline
@@ -31,12 +39,7 @@ export class VectorSearchService {
             queryVector: queryVector,
             numCandidates: topK * 10,
             limit: topK,
-            filter: {
-              $and: [
-                { organizationId: orgId },
-                { projectId: projId }
-              ]
-            }
+            filter: atlasFilter
           }
         },
         {

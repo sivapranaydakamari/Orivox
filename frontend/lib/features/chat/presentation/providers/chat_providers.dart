@@ -101,7 +101,7 @@ class ChatControllerNotifier extends StateNotifier<AsyncValue<Conversation?>> {
   ChatControllerNotifier(this._repository, this._conversationsNotifier, this._projectId, Conversation? initialConv) 
       : super(AsyncValue.data(initialConv));
 
-  Future<void> askQuestion(String question) async {
+  Future<void> askQuestion(String question, {String? scope}) async {
     if (!mounted) return;
     // 1. Get or create conversation
     Conversation conv = state.value ?? await _conversationsNotifier.createConversation(question.length > 30 ? '${question.substring(0, 30)}...' : question);
@@ -126,7 +126,7 @@ class ChatControllerNotifier extends StateNotifier<AsyncValue<Conversation?>> {
 
     // 3. Make backend call
     try {
-      final responseMsg = await _repository.askQuestion(_projectId, question);
+      final responseMsg = await _repository.askQuestion(_projectId, question, scope: scope);
       
       // 4. Update with assistant message
       conv = conv.copyWith(

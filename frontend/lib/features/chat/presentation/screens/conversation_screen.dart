@@ -25,6 +25,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late String _currentProviderArg;
+  String _selectedScope = 'CURRENT_PROJECT';
 
   @override
   void initState() {
@@ -56,10 +57,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     _controller.clear();
 
     final notifier = ref.read(activeChatProvider(_currentProviderArg).notifier);
-    await notifier.askQuestion(question);
+    await notifier.askQuestion(question, scope: _selectedScope);
     
-    // Once first message is sent on a "new" chat, we might want to update the URL
-    // but the provider continues to track it.
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 
@@ -121,43 +120,75 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   }
 
   Widget _buildInputArea(BuildContext context, bool isLoading) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+        color: theme.colorScheme.surface,
+        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                enabled: !isLoading,
-                maxLines: 5,
-                minLines: 1,
-                decoration: InputDecoration(
-                  hintText: 'Ask a question about the project...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+            Row(
+              children: [
+                Text('Scope: ', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(width: AppSpacing.xs),
+                SegmentedButton<String>(
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  segments: const [
+                    ButtonSegment(value: 'CURRENT_PROJECT', label: Text('Current Project'), icon: Icon(Icons.folder_outlined, size: 14)),
+                    ButtonSegment(value: 'ALL_PROJECTS', label: Text('All Projects'), icon: Icon(Icons.corporate_fare_outlined, size: 14)),
+                  ],
+                  selected: {_selectedScope},
+                  onSelectionChanged: isLoading ? null : (newSelection) {
+                    setState(() {
+                      _selectedScope = newSelection.first;
+                    });
+                  },
                 ),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (val) {
-                  if (!isLoading) {
-                    _submitQuestion(val);
-                  }
-                },
-              ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.sm),
-            FloatingActionButton(
-              onPressed: isLoading ? null : () => _submitQuestion(_controller.text),
-              elevation: 0,
-              child: isLoading 
-                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.send),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    enabled: !isLoading,
+                    maxLines: 5,
+                    minLines: 1,
+                    decoration: InputDecoration(
+                      hintText: _selectedScope == 'ALL_PROJECTS' 
+                          ? 'Ask anything across all organization projects...' 
+                          : 'Ask anything about this project...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (val) {
+                      if (!isLoading) {
+                        _submitQuestion(val);
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                FloatingActionButton(
+                  onPressed: isLoading ? null : () => _submitQuestion(_controller.text),
+                  elevation: 0,
+                  child: isLoading 
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.send),
+                ),
+              ],
             ),
           ],
         ),

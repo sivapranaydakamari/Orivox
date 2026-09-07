@@ -6,6 +6,7 @@ import { SyncRunStatus } from '../models/sync-run.model';
 import { sourceRegistry } from '../registry/source.registry';
 import { ingestionService } from './ingestion.service';
 import { DocumentSourceType } from '../../document/model/document.model';
+import { documentRepository } from '../../document/repository/document.repository';
 import { logger } from '../../../config/logger';
 import { GitHubInstallation } from '../model/github-installation.model';
 import { githubClient } from '../clients/github.client';
@@ -112,13 +113,20 @@ export class SyncManager {
       const documentsUpdated = 0;
       const failedDocuments = 0;
 
-      // 7. Mark as Success & Unlock
+      const totalIndexedFiles = await documentRepository.count({
+        projectId: lockedRepository.projectId,
+      });
+
+      // 7. Mark as Success & Unlock (Idempotent updates)
       await repositoryRepository.update(lockedRepository._id, {
         syncStatus: SyncStatus.SUCCESS,
         syncLockedAt: null,
         syncLockedBy: null,
         lastSuccessfulSync: new Date(),
         lastProcessedPullRequest: nextSyncState.lastProcessedPullRequest as number,
+        filesAdded: totalIndexedFiles,
+        filesModified: 0,
+        filesDeleted: 0,
       });
 
       await syncRunRepository.update(syncRun._id.toString(), {

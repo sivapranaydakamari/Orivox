@@ -12,7 +12,7 @@ export class KnowledgeController {
 
   getById = asyncHandler(async (req: Request, res: Response) => {
     const record = await knowledgeService.getKnowledgeRecordById(req.params.id as string);
-    if (!record) {
+    if (!record || record.organizationId.toString() !== req.user!.organizationId) {
       return ApiResponse.error(res, 'Knowledge record not found', null, 404);
     }
 

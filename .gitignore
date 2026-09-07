@@ -36,3 +36,8 @@ redis5.zip
 
 # Orivox Temp Files
 scratch/
+backend/test-*.js
+backend/test_*.js
+backend/test_*.ts
+backend/check-user.js
+backend/fix_installation.js

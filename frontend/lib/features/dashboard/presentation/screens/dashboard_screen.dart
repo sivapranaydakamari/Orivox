@@ -5,6 +5,9 @@ import '../../../../core/providers/active_org_provider.dart';
 import '../../../../core/providers/permissions_provider.dart';
 import '../../../../core/widgets/saas_layout.dart';
 import '../../../../core/widgets/skeleton_loaders.dart';
+import '../../../../core/widgets/buttons.dart';
+import '../../../../core/widgets/feedback.dart';
+import '../../../../core/network/api_error_handler.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../project/presentation/providers/project_provider.dart';
@@ -55,23 +58,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         if (user.memberships.isEmpty) {
           return Scaffold(
             body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.business_outlined, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    const Text('Welcome to Orivox ✨', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text('You don\'t belong to any workspace yet.', style: TextStyle(fontSize: 16, color: Colors.grey), textAlign: TextAlign.center),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: const Text('Go to Workspaces'),
-                      onPressed: () => context.go('/organizations'),
-                    ),
-                  ],
+              child: EmptyState(
+                title: 'Welcome to Orivox',
+                message: 'You don\'t belong to any workspace yet.',
+                icon: Icons.business_outlined,
+                action: PrimaryButton(
+                  isFullWidth: false,
+                  icon: Icons.add,
+                  text: 'Go to Workspaces',
+                  onPressed: () => context.go('/organizations'),
                 ),
               ),
             ),
@@ -87,6 +82,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           // Let SaaSLayout render with the targetOrgId temporarily if needed.
         }
 
+        final theme = Theme.of(context);
+
         return SaaSLayout(
           title: 'Dashboard',
           child: SingleChildScrollView(
@@ -101,25 +98,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Welcome back, ${user.name}', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+                        Text('Welcome back, ${user.name}', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withAlpha(25),
+                                color: theme.colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.blue.withAlpha(128)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.shield_outlined, size: 14, color: Colors.blue),
+                                  Icon(Icons.shield_outlined, size: 14, color: theme.colorScheme.primary),
                                   const SizedBox(width: 6),
                                   Text(
                                     permissions.roleTitle.toUpperCase(),
-                                    style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
+                                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
                                   ),
                                 ],
                               ),
@@ -127,7 +123,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             const SizedBox(width: 12),
                             Text(
                               user.email,
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
                             ),
                           ],
                         ),
@@ -143,28 +139,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   runSpacing: 12,
                   children: [
                     if (permissions.canCreateProject)
-                      ElevatedButton.icon(
+                      PrimaryButton(
+                        isFullWidth: false,
                         onPressed: () => context.push('/projects'),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Create Project'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
+                        icon: Icons.add,
+                        text: 'Create Project',
                       ),
-                    OutlinedButton.icon(
+                    SecondaryButton(
+                      isFullWidth: false,
                       onPressed: () => context.push('/chat'),
-                      icon: const Icon(Icons.auto_awesome),
-                      label: const Text('Ask AI Assistant'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
+                      icon: Icons.auto_awesome,
+                      text: 'Ask AI Assistant',
                     ),
-                    TextButton.icon(
-                      onPressed: () => context.push('/knowledge'),
-                      icon: const Icon(Icons.article_outlined),
-                      label: const Text('Knowledge Base'),
+                    SecondaryButton(
+                      isFullWidth: false,
+                      onPressed: () => context.push('/projects'),
+                      icon: Icons.folder_outlined,
+                      text: 'View Projects',
                     ),
                   ],
                 ),
@@ -175,45 +166,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth > 800;
-
                     final projectsColumn = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Recent Projects', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                        Text('Recent Projects', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
                         projectsAsync.when(
                           data: (projects) {
                             if (projects.isEmpty) {
-                              return Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(color: Colors.grey.withAlpha(40)),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(40.0),
-                                  child: Center(
-                                    child: Column(
-                                      children: [
-                                        const Icon(Icons.folder_open_outlined, size: 56, color: Colors.grey),
-                                        const SizedBox(height: 16),
-                                        const Text('No projects found', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                                        const SizedBox(height: 8),
-                                        if (permissions.canCreateProject)
-                                          const Text('Start by creating your first workspace project.', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center)
-                                        else
-                                          const Text('Contact your workspace administrator to assign you to a project.', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
-                                        if (permissions.canCreateProject) ...[
-                                          const SizedBox(height: 20),
-                                          ElevatedButton.icon(
-                                            icon: const Icon(Icons.add),
-                                            label: const Text('Create Project'),
-                                            onPressed: () => context.push('/projects'),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                              return EmptyState(
+                                title: 'No projects found',
+                                message: permissions.canCreateProject 
+                                    ? 'Start by creating your first workspace project.' 
+                                    : 'Contact your workspace administrator to assign you to a project.',
+                                icon: Icons.folder_open_outlined,
+                                action: permissions.canCreateProject
+                                    ? PrimaryButton(
+                                        isFullWidth: false,
+                                        icon: Icons.add,
+                                        text: 'Create Project',
+                                        onPressed: () => context.push('/projects'),
+                                      )
+                                    : null,
                               );
                             }
                             return ListView.builder(
@@ -224,19 +198,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 final p = projects[index];
                                 return Card(
                                   margin: const EdgeInsets.only(bottom: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: Colors.grey.withAlpha(40)),
-                                  ),
                                   child: ListTile(
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: Colors.blue.withAlpha(20),
+                                        color: theme.colorScheme.primaryContainer,
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: const Icon(Icons.folder, color: Colors.blue),
+                                      child: Icon(Icons.folder, color: theme.colorScheme.primary),
                                     ),
                                     title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                                     subtitle: Text(
@@ -252,12 +222,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             );
                           },
                           loading: () => const SkeletonListLoader(count: 3, itemHeight: 70),
-                          error: (e, st) => Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text('Unable to load projects: $e', style: const TextStyle(color: Colors.red)),
-                            ),
-                          ),
+                          error: (e, st) => ErrorState(message: ApiErrorHandler.getMessage(e)),
                         ),
                       ],
                     );

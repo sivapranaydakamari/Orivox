@@ -1,4 +1,10 @@
+export enum AskScope {
+  CURRENT_PROJECT = 'CURRENT_PROJECT',
+  ALL_PROJECTS = 'ALL_PROJECTS',
+}
+
 export interface AskDto {
-  projectId: string;
+  scope?: AskScope;
+  projectId?: string;
   question: string;
 }

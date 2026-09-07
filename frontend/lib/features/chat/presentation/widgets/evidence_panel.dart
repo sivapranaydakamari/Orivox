@@ -92,19 +92,30 @@ class EvidencePanel extends StatelessWidget {
                         'Relevance: ${source.similarityScore}%',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: source.similarityScore > 80 
-                              ? Colors.green 
+                              ? theme.colorScheme.secondary 
                               : source.similarityScore > 50 
-                                  ? Colors.orange 
-                                  : Colors.red,
+                                  ? const Color(0xFFD97706) 
+                                  : theme.colorScheme.error,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Repository: ${source.repository}',
-                    style: theme.textTheme.bodyMedium,
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Icon(Icons.source_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          source.repository,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                   if (source.id.isEmpty) ...[
                     const SizedBox(height: AppSpacing.xs),

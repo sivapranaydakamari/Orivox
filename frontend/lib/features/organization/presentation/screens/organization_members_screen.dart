@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/saas_layout.dart';
 import '../../../../core/widgets/permission_tooltip.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/providers/permissions_provider.dart';
 import '../providers/organization_members_provider.dart';
 import 'package:dio/dio.dart';
@@ -13,7 +12,7 @@ class OrganizationMembersScreen extends ConsumerStatefulWidget {
   const OrganizationMembersScreen({super.key, required this.organizationId});
 
   @override
-  _OrganizationMembersScreenState createState() => _OrganizationMembersScreenState();
+  ConsumerState<OrganizationMembersScreen> createState() => _OrganizationMembersScreenState();
 }
 
 class _OrganizationMembersScreenState extends ConsumerState<OrganizationMembersScreen> {

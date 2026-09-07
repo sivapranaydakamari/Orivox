@@ -82,25 +82,41 @@ class AiResponseCard extends StatelessWidget {
                     const Divider(),
                     if (message.metadata!.warnings.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.sm),
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.errorContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.warning_amber_rounded, color: theme.colorScheme.onErrorContainer, size: 20),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                message.metadata!.warnings.join('\n'),
-                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onErrorContainer),
+                      for (final warning in message.metadata!.warnings) ...[
+                        Builder(
+                          builder: (context) {
+                            final isEngineNotice = warning.toLowerCase().contains('synthesized') || warning.toLowerCase().contains('vector search');
+                            final bgColor = isEngineNotice 
+                                ? theme.colorScheme.surfaceContainerHighest.withAlpha(150)
+                                : theme.colorScheme.primaryContainer.withAlpha(100);
+                            final fgColor = isEngineNotice 
+                                ? theme.colorScheme.onSurfaceVariant 
+                                : theme.colorScheme.onPrimaryContainer;
+                            final icon = isEngineNotice ? Icons.auto_awesome : Icons.info_outline;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                              decoration: BoxDecoration(
+                                color: bgColor,
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                            ),
-                          ],
+                              child: Row(
+                                children: [
+                                  Icon(icon, color: fgColor, size: 16),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  Expanded(
+                                    child: Text(
+                                      warning,
+                                      style: theme.textTheme.labelSmall?.copyWith(color: fgColor),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                      ),
+                      ],
                     ],
                     const SizedBox(height: AppSpacing.sm),
                     Row(

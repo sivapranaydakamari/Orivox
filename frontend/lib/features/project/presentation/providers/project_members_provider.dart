@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
-import '../../../../core/providers/active_org_provider.dart';
 
 class ProjectMember {
   final String id;

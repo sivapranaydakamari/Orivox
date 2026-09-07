@@ -198,6 +198,9 @@ export class GitHubClient {
     this.logRateLimit(response);
 
     if (!response.ok) {
+      if (response.status === 403 || response.status === 401) {
+        throw new Error('GitHub App needs repository Contents (read-only) permission to index source files.');
+      }
       throw new Error(`GitHub API Error: Failed to fetch Git Tree (Status: ${response.status})`);
     }
 
@@ -213,6 +216,9 @@ export class GitHubClient {
     this.logRateLimit(response);
 
     if (!response.ok) {
+      if (response.status === 403 || response.status === 401) {
+        throw new Error('GitHub App needs repository Contents (read-only) permission to index source files.');
+      }
       throw new Error(`GitHub API Error: Failed to fetch blob (Status: ${response.status})`);
     }
 

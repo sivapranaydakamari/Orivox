@@ -18,18 +18,35 @@ class SyncStatusBadge extends StatelessWidget {
       return const StatusBadge(
         label: 'Disabled',
         type: StatusType.warning,
+        icon: Icons.pause_circle_outline,
       );
     }
 
     switch (status) {
       case SyncStatus.pending:
-        return const StatusBadge(label: 'Waiting to sync', type: StatusType.info);
+        return const StatusBadge(
+          label: 'Waiting to sync',
+          type: StatusType.info,
+          icon: Icons.schedule,
+        );
       case SyncStatus.syncing:
-        return const StatusBadge(label: 'Syncing...', type: StatusType.info);
+        return const StatusBadge(
+          label: 'Syncing...',
+          type: StatusType.info,
+          icon: Icons.sync,
+        );
       case SyncStatus.success:
-        return const StatusBadge(label: 'Synced', type: StatusType.success);
+        return const StatusBadge(
+          label: 'Synced',
+          type: StatusType.success,
+          icon: Icons.check_circle_outline,
+        );
       case SyncStatus.failed:
-        return const StatusBadge(label: 'Sync failed', type: StatusType.error);
+        return const StatusBadge(
+          label: 'Sync failed',
+          type: StatusType.error,
+          icon: Icons.error_outline,
+        );
     }
   }
 }

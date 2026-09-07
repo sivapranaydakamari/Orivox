@@ -41,14 +41,11 @@ class ProjectListScreen extends ConsumerWidget {
                 PermissionTooltip(
                   hasPermission: permissions.canCreateProject,
                   requiredRole: 'Organization Admin',
-                  child: ElevatedButton.icon(
+                  child: PrimaryButton(
+                    isFullWidth: false,
                     onPressed: permissions.canCreateProject ? () => _showCreateProjectDialog(context, ref) : null,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Create Project'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
+                    icon: Icons.add,
+                    text: 'Create Project',
                   ),
                 ),
               ],
@@ -57,23 +54,22 @@ class ProjectListScreen extends ConsumerWidget {
             projectsState.when(
               data: (projects) {
                 if (projects.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(64.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.folder_open_outlined, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          const Text('No Projects Found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          const Text('No projects available in this workspace.', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    ),
+                  return EmptyState(
+                    title: 'No Projects Found',
+                    message: 'No projects available in this workspace.',
+                    icon: Icons.folder_open_outlined,
+                    action: permissions.canCreateProject
+                        ? PrimaryButton(
+                            isFullWidth: false,
+                            icon: Icons.add,
+                            text: 'Create Project',
+                            onPressed: () => _showCreateProjectDialog(context, ref),
+                          )
+                        : null,
                   );
                 }
 
+                final theme = Theme.of(context);
                 return LayoutBuilder(
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth > 700;
@@ -92,10 +88,6 @@ class ProjectListScreen extends ConsumerWidget {
                           final project = projects[index];
                           return Card(
                             elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.withAlpha(50)),
-                            ),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(12),
                               onTap: () => context.push('/projects/${project.id}'),
@@ -110,10 +102,10 @@ class ProjectListScreen extends ConsumerWidget {
                                         Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: Colors.blue.withAlpha(20),
+                                            color: theme.colorScheme.primaryContainer,
                                             borderRadius: BorderRadius.circular(8),
                                           ),
-                                          child: const Icon(Icons.folder, color: Colors.blue),
+                                          child: Icon(Icons.folder, color: theme.colorScheme.primary),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
@@ -128,7 +120,7 @@ class ProjectListScreen extends ConsumerWidget {
                                     ),
                                     Text(
                                       project.description?.isNotEmpty == true ? project.description! : 'No description provided',
-                                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -149,16 +141,15 @@ class ProjectListScreen extends ConsumerWidget {
                       itemBuilder: (context, index) {
                         final project = projects[index];
                         return Card(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                             leading: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withAlpha(20),
+                                color: theme.colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.folder, color: Colors.blue),
+                              child: Icon(Icons.folder, color: theme.colorScheme.primary),
                             ),
                             title: Text(project.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text(

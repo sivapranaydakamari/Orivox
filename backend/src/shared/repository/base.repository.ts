@@ -43,4 +43,8 @@ export abstract class BaseRepository<T extends Document> {
   async bulkWrite(operations: any[], options?: Record<string, any>): Promise<any> {
     return await this.model.bulkWrite(operations, options);
   }
+
+  async count(filter: Record<string, any>): Promise<number> {
+    return await this.model.countDocuments(filter).exec();
+  }
 }

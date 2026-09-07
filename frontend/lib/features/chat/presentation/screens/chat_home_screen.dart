@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/feedback.dart';
 import '../../../../core/widgets/saas_layout.dart';
 import '../../../../core/widgets/skeleton_loaders.dart';
@@ -34,22 +35,15 @@ class ChatHomeScreen extends ConsumerWidget {
 
       return SaaSLayout(
         title: 'AI Assistant',
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const EmptyState(
-                title: 'No Workspace Project Found',
-                message: 'Please create a project first before starting an AI Assistant conversation.',
-                icon: Icons.chat_bubble_outline,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('Go to Projects'),
-                onPressed: () => context.push('/projects'),
-              ),
-            ],
+        child: EmptyState(
+          title: 'No Workspace Project Found',
+          message: 'Please create a project first before starting an AI Assistant conversation.',
+          icon: Icons.chat_bubble_outline,
+          action: PrimaryButton(
+            isFullWidth: false,
+            icon: Icons.add,
+            text: 'Go to Projects',
+            onPressed: () => context.push('/projects'),
           ),
         ),
       );
@@ -70,6 +64,7 @@ class ChatHomeScreen extends ConsumerWidget {
                 title: 'Clear History',
                 message: 'Are you sure you want to delete all conversations? This cannot be undone.',
                 confirmText: 'Clear',
+                isDestructive: true,
                 onConfirm: () {
                   Navigator.pop(context);
                   ref.read(conversationsProvider.notifier).clearAll();
@@ -89,12 +84,13 @@ class ChatHomeScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('AI Assistant', style: Theme.of(context).textTheme.headlineMedium),
-                ElevatedButton.icon(
+                PrimaryButton(
+                  isFullWidth: false,
                   onPressed: () {
                     context.push('/chat/new');
                   },
-                  icon: const Icon(Icons.add),
-                  label: const Text('New Chat'),
+                  icon: Icons.add,
+                  text: 'New Chat',
                 ),
               ],
             ),
@@ -102,19 +98,15 @@ class ChatHomeScreen extends ConsumerWidget {
             asyncConversations.when(
               data: (conversations) {
                 if (conversations.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(64.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text('No Conversations', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 8),
-                          Text('Start a new chat to interact with the AI Assistant.', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
+                  return EmptyState(
+                    title: 'No Conversations',
+                    message: 'Start a new chat to interact with the AI Assistant.',
+                    icon: Icons.chat_bubble_outline,
+                    action: PrimaryButton(
+                      isFullWidth: false,
+                      icon: Icons.add,
+                      text: 'New Chat',
+                      onPressed: () => context.push('/chat/new'),
                     ),
                   );
                 }

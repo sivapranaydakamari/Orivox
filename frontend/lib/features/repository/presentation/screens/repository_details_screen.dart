@@ -132,16 +132,26 @@ class RepositoryDetailsScreen extends ConsumerWidget {
                         if (repository.syncError != null) ...[
                           const SizedBox(height: AppSpacing.md),
                           Container(
-                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.errorContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(
-                              repository.syncError!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onErrorContainer,
-                              ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 20),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    ApiErrorHandler.getMessage(repository.syncError!),
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onErrorContainer,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ]
@@ -204,7 +214,7 @@ class RepositoryDetailsScreen extends ConsumerWidget {
       },
       loading: () => const LoadingWidget(message: 'Loading repository details...'),
       error: (error, stack) => ErrorState(
-        message: 'Failed to load repository: $error',
+        message: ApiErrorHandler.getMessage(error),
         onRetry: () => ref.invalidate(repositoryDetailsProvider(repositoryId)),
       ),
     );
@@ -217,6 +227,7 @@ class RepositoryDetailsScreen extends ConsumerWidget {
         title: 'Delete Repository',
         message: 'Are you sure you want to delete this repository? This action cannot be undone.',
         confirmText: 'Delete',
+        isDestructive: true,
         onConfirm: () {
           Navigator.of(context).pop();
           ref.read(repositoryActionProvider.notifier).deleteRepository(repositoryId).then((_) {

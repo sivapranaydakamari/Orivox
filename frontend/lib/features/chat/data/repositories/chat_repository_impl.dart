@@ -8,8 +8,8 @@ class ChatRepositoryImpl {
 
   ChatRepositoryImpl(this._remoteDataSource, this._localDataSource);
 
-  Future<ChatMessage> askQuestion(String projectId, String question) {
-    return _remoteDataSource.askQuestion(projectId, question);
+  Future<ChatMessage> askQuestion(String projectId, String question, {String? scope}) {
+    return _remoteDataSource.askQuestion(projectId, question, scope: scope);
   }
 
   Future<List<Conversation>> getConversations() {

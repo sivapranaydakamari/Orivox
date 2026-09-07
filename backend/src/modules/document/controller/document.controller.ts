@@ -26,7 +26,7 @@ export class DocumentController {
 
   getById = asyncHandler(async (req: Request, res: Response) => {
     const document = await documentService.getDocumentById(req.params.id as string);
-    if (!document) {
+    if (!document || document.organizationId.toString() !== req.user!.organizationId) {
       return ApiResponse.error(res, 'Document not found', null, 404);
     }
     ApiResponse.success(res, document, 'Document retrieved successfully');

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/widgets/saas_layout.dart';
 import '../../../../core/widgets/permission_tooltip.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/providers/permissions_provider.dart';
 import '../../../../core/providers/active_org_provider.dart';
 import '../providers/project_members_provider.dart';
@@ -15,7 +14,7 @@ class ProjectMembersScreen extends ConsumerStatefulWidget {
   const ProjectMembersScreen({super.key, required this.projectId});
 
   @override
-  _ProjectMembersScreenState createState() => _ProjectMembersScreenState();
+  ConsumerState<ProjectMembersScreen> createState() => _ProjectMembersScreenState();
 }
 
 class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {

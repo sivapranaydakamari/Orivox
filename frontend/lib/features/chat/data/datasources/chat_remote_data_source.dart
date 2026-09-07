@@ -6,11 +6,15 @@ class ChatRemoteDataSource {
 
   ChatRemoteDataSource(this._dio);
 
-  Future<ChatMessage> askQuestion(String projectId, String question) async {
-    final response = await _dio.post('/ask', data: {
+  Future<ChatMessage> askQuestion(String projectId, String question, {String? scope}) async {
+    final body = <String, dynamic>{
       'projectId': projectId,
       'question': question,
-    });
+    };
+    if (scope != null) {
+      body['scope'] = scope;
+    }
+    final response = await _dio.post('/ask', data: body);
 
     final data = response.data['data'] as Map<String, dynamic>;
     

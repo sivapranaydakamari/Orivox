@@ -89,9 +89,20 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> with 
         });
       } else {
         bool hasAnyRepos = installations.any((inst) => (inst['repositories'] as List?)?.isNotEmpty ?? false);
+        Map<String, dynamic>? updatedSelection;
+        if (_selectedInstallation != null) {
+          final existing = installations.cast<Map<String, dynamic>?>().firstWhere(
+            (inst) => inst?['installationId'] == _selectedInstallation?['installationId'],
+            orElse: () => null,
+          );
+          updatedSelection = existing ?? installations.first;
+        } else {
+          updatedSelection = installations.isNotEmpty ? installations.first : null;
+        }
+
         setState(() {
           _installations = installations;
-          _selectedInstallation = installations.length == 1 ? installations.first : null;
+          _selectedInstallation = updatedSelection;
           _connectionState = hasAnyRepos 
               ? GitHubConnectionState.repositoriesLoaded 
               : GitHubConnectionState.noRepositories;
@@ -222,7 +233,7 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> with 
               children: [
                 Icon(
                   canConnect ? Icons.check_circle : Icons.lock,
-                  color: canConnect ? Colors.green : Colors.orange,
+                  color: canConnect ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.error,
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
@@ -230,7 +241,9 @@ class _AddRepositoryScreenState extends ConsumerState<AddRepositoryScreen> with 
                     canConnect 
                       ? 'You have Project Manager permission to connect repositories.'
                       : 'You can view repositories, but you need Project Manager permission to connect one.',
-                    style: TextStyle(color: canConnect ? Colors.green.shade700 : Colors.orange.shade800),
+                    style: TextStyle(
+                      color: canConnect ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ),
               ],

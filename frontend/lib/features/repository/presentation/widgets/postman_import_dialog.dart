@@ -6,7 +6,7 @@ class PostmanImportDialog extends StatefulWidget {
   const PostmanImportDialog({super.key, required this.projectId});
 
   @override
-  _PostmanImportDialogState createState() => _PostmanImportDialogState();
+  State<PostmanImportDialog> createState() => _PostmanImportDialogState();
 }
 
 class _PostmanImportDialogState extends State<PostmanImportDialog> {

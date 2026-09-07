@@ -35,7 +35,8 @@ export class CitationBuilder {
       const sourceId = evidence.documentId || evidence.knowledgeRecordId;
       const roundedScore = (evidence.similarityScore * 100).toFixed(2);
       
-      const citation = `[Source ${i + 1}] ${evidence.sourceType} - ${evidence.repository ? evidence.repository : 'Unknown Repo'} (ID: ${sourceId}) - Relevance: ${roundedScore}%`;
+      const repoName = evidence.repository || (evidence.metadata?.repository as string) || 'General Knowledge';
+      const citation = `[Source ${i + 1}] ${evidence.sourceType} - ${repoName} (ID: ${sourceId}) - Relevance: ${roundedScore}%`;
       citations.push(citation);
     }
 

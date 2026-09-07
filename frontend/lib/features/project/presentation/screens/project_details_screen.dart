@@ -150,13 +150,18 @@ class ProjectDetailsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       children: [
-                        const Icon(Icons.source_outlined, size: 32, color: Colors.blue),
+                        Icon(Icons.source_outlined, size: 32, color: Theme.of(context).colorScheme.primary),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           '${asyncRepos.valueOrNull?.length ?? 0}',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        const Text('Repositories', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        Text(
+                          'Repositories',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -169,13 +174,18 @@ class ProjectDetailsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       children: [
-                        const Icon(Icons.article_outlined, size: 32, color: Colors.green),
+                        Icon(Icons.article_outlined, size: 32, color: Theme.of(context).colorScheme.secondary),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           '${asyncDocs.valueOrNull?.length ?? 0}',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        const Text('Documents', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        Text(
+                          'Documents',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -202,13 +212,11 @@ class ProjectDetailsScreen extends ConsumerWidget {
             runSpacing: AppSpacing.md,
             children: [
               Text('Connected Repositories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              SizedBox(
-                width: 220,
-                child: PrimaryButton(
-                  text: permissions.canCreateRepository(projectId) ? 'Connect Repository' : 'View GitHub Connection',
-                  icon: permissions.canCreateRepository(projectId) ? Icons.add : Icons.visibility,
-                  onPressed: () => context.push('/projects/$projectId/repositories/new'),
-                ),
+              PrimaryButton(
+                isFullWidth: false,
+                text: permissions.canCreateRepository(projectId) ? 'Connect Repository' : 'View GitHub Connection',
+                icon: permissions.canCreateRepository(projectId) ? Icons.add : Icons.visibility,
+                onPressed: () => context.push('/projects/$projectId/repositories/new'),
               ),
             ],
           ),
@@ -217,10 +225,18 @@ class ProjectDetailsScreen extends ConsumerWidget {
             child: asyncRepos.when(
               data: (repos) {
                 if (repos.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     title: 'No Connected Repositories',
                     message: 'Connect a GitHub repository to start importing engineering knowledge into this project.',
                     icon: Icons.source_outlined,
+                    action: permissions.canCreateRepository(projectId)
+                        ? PrimaryButton(
+                            isFullWidth: false,
+                            text: 'Connect Repository',
+                            icon: Icons.add,
+                            onPressed: () => context.push('/projects/$projectId/repositories/new'),
+                          )
+                        : null,
                   );
                 }
                 return ListView.builder(
@@ -251,25 +267,15 @@ class ProjectDetailsScreen extends ConsumerWidget {
       child: asyncDocs.when(
         data: (docs) {
           if (docs.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const EmptyState(
-                    title: 'No Documents Found',
-                    message: 'Documents are extracted automatically when a connected GitHub repository is synchronized.',
-                    icon: Icons.find_in_page_outlined,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  SizedBox(
-                    width: 240,
-                    child: PrimaryButton(
-                      text: 'Connect & Sync Repository',
-                      icon: Icons.sync,
-                      onPressed: () => DefaultTabController.of(context).animateTo(1), // Switch to Repositories tab
-                    ),
-                  ),
-                ],
+            return EmptyState(
+              title: 'No Documents Found',
+              message: 'Documents are extracted automatically when a connected GitHub repository is synchronized.',
+              icon: Icons.find_in_page_outlined,
+              action: PrimaryButton(
+                isFullWidth: false,
+                text: 'Connect & Sync Repository',
+                icon: Icons.sync,
+                onPressed: () => DefaultTabController.of(context).animateTo(1), // Switch to Repositories tab
               ),
             );
           }
@@ -298,25 +304,15 @@ class ProjectDetailsScreen extends ConsumerWidget {
       child: asyncRecords.when(
         data: (records) {
           if (records.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const EmptyState(
-                    title: 'No Knowledge Records',
-                    message: 'Knowledge records are generated automatically after code ingestion and RAG vector embedding.',
-                    icon: Icons.psychology_outlined,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  SizedBox(
-                    width: 240,
-                    child: PrimaryButton(
-                      text: 'Connect & Ingest Code',
-                      icon: Icons.hub,
-                      onPressed: () => DefaultTabController.of(context).animateTo(1), // Switch to Repositories tab
-                    ),
-                  ),
-                ],
+            return EmptyState(
+              title: 'No Knowledge Records',
+              message: 'Knowledge records are generated automatically after code ingestion and RAG vector embedding.',
+              icon: Icons.psychology_outlined,
+              action: PrimaryButton(
+                isFullWidth: false,
+                text: 'Connect & Ingest Code',
+                icon: Icons.hub,
+                onPressed: () => DefaultTabController.of(context).animateTo(1), // Switch to Repositories tab
               ),
             );
           }

@@ -48,12 +48,18 @@ class ApiErrorHandler {
       }
     }
     
+    if (error is String && error.isNotEmpty) {
+      return error;
+    }
+
     // Fallback for non-Dio errors - do not expose raw exceptions to the user
     return 'Something went wrong. Please try again.';
   }
 
   static String? _mapErrorCode(String code) {
     switch (code) {
+      case 'GITHUB_CONTENT_ACCESS_DENIED':
+        return 'Orivox cannot access this repository\'s contents. Please ensure the GitHub App has Contents (read-only) permission in GitHub settings.';
       case 'GITHUB_REPOSITORY_FETCH_FAILED':
         return 'Unable to load your GitHub repositories. Please try again.';
       case 'GITHUB_INSTALLATION_NOT_FOUND':
@@ -62,6 +68,16 @@ class ApiErrorHandler {
         return 'No repositories are available for this GitHub App installation.';
       case 'GITHUB_UNAUTHORIZED':
         return 'You don\'t have permission to access GitHub repositories.';
+      case 'GITHUB_RATE_LIMITED':
+        return 'GitHub API rate limit reached. Please wait a moment and try again.';
+      case 'REPOSITORY_ALREADY_CONNECTED':
+        return 'This repository is already connected to this project.';
+      case 'PROJECT_ACCESS_DENIED':
+        return 'You don\'t have access to this project.';
+      case 'ORGANIZATION_ACCESS_DENIED':
+        return 'You don\'t have access to this organization.';
+      case 'DOCUMENT_PROCESSING_FAILED':
+        return 'Document extraction could not be completed. Please verify the document format.';
       default:
         return null;
     }

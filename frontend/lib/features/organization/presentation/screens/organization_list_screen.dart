@@ -7,6 +7,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/providers/permissions_provider.dart';
 import '../../../../core/widgets/indicators.dart';
 import '../../../../core/widgets/feedback.dart';
+import '../../../../core/widgets/orivox_logo.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/inputs.dart';
@@ -23,7 +24,7 @@ class OrganizationListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Orivox'),
+        title: const OrivoxLogo(height: 32),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -39,20 +40,18 @@ class OrganizationListScreen extends ConsumerWidget {
           child: organizationsState.when(
             data: (organizations) {
               if (organizations.isEmpty) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text('Welcome to Orivox ✨', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: AppSpacing.sm),
-                    const Text('You don\'t belong to any workspace yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                    const SizedBox(height: AppSpacing.lg),
-                    if (permissions.canCreateOrganization)
-                      PrimaryButton(
-                        text: 'Create Organization',
-                        onPressed: () => _showCreateOrganizationDialog(context, ref),
-                      ),
-                  ],
+                return EmptyState(
+                  title: 'Welcome to Orivox',
+                  message: 'You don\'t belong to any workspace yet.',
+                  icon: Icons.business_outlined,
+                  action: permissions.canCreateOrganization
+                      ? PrimaryButton(
+                          isFullWidth: false,
+                          text: 'Create Organization',
+                          icon: Icons.add,
+                          onPressed: () => _showCreateOrganizationDialog(context, ref),
+                        )
+                      : null,
                 );
               }
 

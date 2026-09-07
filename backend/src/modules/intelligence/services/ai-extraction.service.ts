@@ -68,6 +68,7 @@ export class AIExtractionService {
         knowledgeVersion: 1,
         documentId: document._id,
         metadata: {
+          ...(document.metadata as object || {}),
           promptVersion: '1.0',
           parserVersion: '1.0',
           modelName: 'mistral-large-latest',

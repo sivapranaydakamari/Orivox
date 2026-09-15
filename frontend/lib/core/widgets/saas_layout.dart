@@ -202,8 +202,11 @@ class SaaSLayout extends ConsumerWidget {
               if (isDesktop)
                 SizedBox(
                   width: 240,
-                  child: Material(
-                    elevation: 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      border: Border(right: BorderSide(color: theme.colorScheme.outlineVariant)),
+                    ),
                     child: drawerContent,
                   ),
                 ),

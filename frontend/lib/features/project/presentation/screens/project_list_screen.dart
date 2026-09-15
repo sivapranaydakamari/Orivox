@@ -12,11 +12,25 @@ import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/inputs.dart';
 import '../../../../core/widgets/saas_layout.dart';
 
-class ProjectListScreen extends ConsumerWidget {
+class ProjectListScreen extends ConsumerStatefulWidget {
   const ProjectListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProjectListScreen> createState() => _ProjectListScreenState();
+}
+
+class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final projectsState = ref.watch(projectListProvider);
     final permissions = ref.watch(permissionsProvider);
 
@@ -50,9 +64,40 @@ class ProjectListScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search projects by name or description...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val.trim().toLowerCase();
+                });
+              },
+            ),
             const SizedBox(height: 24),
             projectsState.when(
-              data: (projects) {
+              data: (allProjects) {
+                final projects = _searchQuery.isEmpty
+                    ? allProjects
+                    : allProjects.where((p) {
+                        final nameMatch = p.name.toLowerCase().contains(_searchQuery);
+                        final descMatch = p.description?.toLowerCase().contains(_searchQuery) ?? false;
+                        return nameMatch || descMatch;
+                      }).toList();
                 if (projects.isEmpty) {
                   return EmptyState(
                     title: 'No Projects Found',

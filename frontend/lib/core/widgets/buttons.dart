@@ -185,3 +185,60 @@ class DestructiveButton extends StatelessWidget {
     return button;
   }
 }
+
+class GhostButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final IconData? icon;
+  final bool isFullWidth;
+
+  const GhostButton({
+    super.key,
+    required this.text,
+    this.onPressed,
+    this.isLoading = false,
+    this.icon,
+    this.isFullWidth = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final buttonChild = isLoading
+        ? const SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Row(
+            mainAxisSize: isFullWidth ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16),
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              Flexible(
+                child: Text(
+                  text,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          );
+
+    final button = TextButton(
+      onPressed: isLoading ? null : onPressed,
+      child: buttonChild,
+    );
+
+    if (isFullWidth) {
+      return SizedBox(
+        width: double.infinity,
+        child: button,
+      );
+    }
+    return button;
+  }
+}

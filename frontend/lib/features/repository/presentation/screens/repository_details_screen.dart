@@ -11,6 +11,8 @@ import '../../../../core/widgets/saas_layout.dart';
 import '../../../../core/network/api_error_handler.dart';
 import '../../../../core/providers/permissions_provider.dart';
 import '../providers/repository_providers.dart';
+import '../providers/job_providers.dart';
+import '../../domain/entities/repository.dart';
 import '../widgets/sync_status_badge.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../data/models/repository_dto.dart';
@@ -27,6 +29,7 @@ class RepositoryDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final permissions = ref.watch(permissionsProvider);
     final repositoryAsync = ref.watch(repositoryDetailsProvider(repositoryId));
+    final pollingStateAsync = ref.watch(syncPollingProvider(repositoryId));
     final actionState = ref.watch(repositoryActionProvider);
     final theme = Theme.of(context);
 
@@ -63,14 +66,14 @@ class RepositoryDetailsScreen extends ConsumerWidget {
         ),
       ],
       child: ResponsiveLayout(
-        mobile: _buildContent(context, ref, repositoryAsync, permissions, actionState),
+        mobile: _buildContent(context, ref, repositoryAsync, pollingStateAsync, permissions, actionState),
         desktop: Align(
           alignment: Alignment.topCenter,
           child: Container(
             constraints: const BoxConstraints(maxWidth: Responsive.tabletMaxSize),
             width: double.infinity,
             height: double.infinity,
-            child: _buildContent(context, ref, repositoryAsync, permissions, actionState),
+            child: _buildContent(context, ref, repositoryAsync, pollingStateAsync, permissions, actionState),
           ),
         ),
       ),
@@ -80,7 +83,8 @@ class RepositoryDetailsScreen extends ConsumerWidget {
   Widget _buildContent(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue repositoryAsync,
+    AsyncValue<Repository> repositoryAsync,
+    AsyncValue<SyncPollingState> pollingStateAsync,
     Permissions permissions,
     AsyncValue<void> actionState,
   ) {

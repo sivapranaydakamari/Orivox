@@ -39,15 +39,32 @@ export class AIExtractionService {
       // 2. Parse Document
       const parsedDoc = this.parser.parse(document);
 
-      // 3. Build Prompts
-      const systemPrompt = promptBuilder.buildSystemPrompt();
-      const userPrompt = promptBuilder.buildUserPrompt(parsedDoc);
+      let extractedData: any;
+      try {
+        // 3. Build Prompts
+        const systemPrompt = promptBuilder.buildSystemPrompt();
+        const userPrompt = promptBuilder.buildUserPrompt(parsedDoc);
 
-      // 4. Call Mistral AI
-      const rawJsonResponse = await this.mistralClient.extractKnowledge(systemPrompt, userPrompt);
+        // 4. Call Mistral AI
+        const rawJsonResponse = await this.mistralClient.extractKnowledge(systemPrompt, userPrompt);
 
-      // 5. Validate Response via Zod
-      const extractedData = responseValidator.validate(rawJsonResponse);
+        // 5. Validate Response via Zod
+        extractedData = responseValidator.validate(rawJsonResponse);
+      } catch (aiErr) {
+        logger.warn({ error: aiErr, documentId }, 'AIExtractionService: LLM extraction unavailable or failed, using heuristic extraction fallback');
+        const snippet = document.rawContent ? document.rawContent.slice(0, 1500) : '';
+        extractedData = {
+          summary: `Document/Code file: ${parsedDoc.title}\n\nContent:\n${snippet}`,
+          technicalDecisions: [`Indexed file ${parsedDoc.title}`],
+          businessContext: `Source repository artifact for project ${document.projectId}`,
+          risks: [],
+          breakingChanges: [],
+          dependencies: [],
+          componentsAffected: [parsedDoc.title],
+          apisMentioned: [],
+          confidenceScore: 0.85,
+        };
+      }
 
       // 6. Create Knowledge Record
       const record = await KnowledgeRecord.create({

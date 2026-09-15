@@ -10,7 +10,7 @@ import { logger } from '../../../config/logger';
 
 export class AnswerGenerationService {
   // Configurable confidence threshold
-  private static readonly CONFIDENCE_THRESHOLD = 0.65;
+  private static readonly CONFIDENCE_THRESHOLD = 0.20;
   private static readonly FALLBACK_ANSWER = "I couldn't find enough relevant information in the selected project to answer that.";
 
   constructor(

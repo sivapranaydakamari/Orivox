@@ -84,7 +84,7 @@ class OrganizationListScreen extends ConsumerWidget {
                         authenticated: (user) {
                           final mem = user.memberships.where((m) => m.organizationId == org.id).firstOrNull;
                           if (mem != null) {
-                            roleStr = mem.orgRole.name.toUpperCase();
+                            roleStr = mem.orgRole.toString().split('.').last.toUpperCase();
                           }
                         },
                         orElse: () {},

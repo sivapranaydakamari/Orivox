@@ -16,6 +16,7 @@ import '../widgets/job_details_card.dart';
 import '../widgets/sync_status_badge.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../domain/entities/sync_status.dart';
+import '../../domain/entities/repository.dart';
 
 class SyncDashboardScreen extends ConsumerWidget {
   final String repositoryId;
@@ -99,7 +100,7 @@ class SyncDashboardScreen extends ConsumerWidget {
   Widget _buildContent(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue repositoryAsync,
+    AsyncValue<Repository> repositoryAsync,
     AsyncValue<SyncPollingState> pollingStateAsync,
     Permissions permissions,
     AsyncValue<void> actionState,
@@ -107,8 +108,8 @@ class SyncDashboardScreen extends ConsumerWidget {
     return repositoryAsync.when(
       data: (repository) {
         // If polling state has data, use its syncStatus, otherwise fallback to repository
-        final String currentSyncStatusStr = pollingStateAsync.valueOrNull?.statusData['syncStatus'] ?? 
-                                            repository.syncStatus.name.toUpperCase();
+        final String currentSyncStatusStr = pollingStateAsync.valueOrNull?.statusData['syncStatus']?.toString() ?? 
+                                            repository.syncStatus.displayName.toUpperCase();
         
         final currentSyncStatus = _parseSyncStatus(currentSyncStatusStr);
 

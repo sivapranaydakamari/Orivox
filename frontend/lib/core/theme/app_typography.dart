@@ -92,4 +92,22 @@ class AppTypography {
       ),
     );
   }
+
+  static TextStyle codeMedium({Color? color, FontWeight fontWeight = FontWeight.w400}) {
+    return GoogleFonts.jetBrainsMono(
+      fontSize: 13,
+      fontWeight: fontWeight,
+      letterSpacing: 0,
+      color: color,
+    );
+  }
+
+  static TextStyle codeSmall({Color? color, FontWeight fontWeight = FontWeight.w400}) {
+    return GoogleFonts.jetBrainsMono(
+      fontSize: 12,
+      fontWeight: fontWeight,
+      letterSpacing: 0,
+      color: color,
+    );
+  }
 }

@@ -1,101 +1,163 @@
-# Enterprise Engineering Knowledge Assistant
+# Orivox --- Engineering Knowledge Discovery and Retrieval System
 
-The Engineering Knowledge Assistant is an internal knowledge platform that continuously captures, organizes, secures, and retrieves engineering knowledge across software projects. This repository contains the backend and foundation for Phase 0 of the project.
+Orivox helps engineering teams find the knowledge behind their code. It
+collects information from software repositories and uses AI-powered
+retrieval to help engineers ask questions and find answers grounded in
+relevant project context.
 
-## Folder Structure
+## What it does
 
-The project follows the layered architecture defined in the architecture specifications:
+-   Connects with GitHub to collect repository information.
+-   Organizes engineering knowledge so it is easier to search and reuse.
+-   Uses retrieval-augmented generation (RAG) to answer questions using
+    relevant project context.
+-   Keeps information scoped by organization and project.
+-   Provides source references so users can trace answers back to
+    supporting evidence.
 
+## Architecture
+
+### System overview
+
+![Orivox system architecture](docs/diagrams/system_architecture.svg)
+
+The frontend communicates with the backend API. The backend handles
+access checks, repository ingestion, knowledge processing, retrieval,
+and answer generation.
+
+### GitHub integration
+
+![GitHub integration and
+security](docs/diagrams/github-integeration.svg)
+
+Orivox uses GitHub App credentials to access authorized repositories.
+Webhook signatures are checked separately to verify incoming GitHub
+events.
+
+### RAG pipeline
+
+![Orivox RAG pipeline](docs/diagrams/rag-pipeline.svg)
+
+The pipeline prepares knowledge from repository content, creates
+embeddings, retrieves relevant records for a question, and uses that
+context to generate an answer with supporting references. If there is
+not enough evidence, the system is designed to use a fallback response
+rather than invent an answer.
+
+## Tech stack
+
+-   **Backend:** JavaScript, Node.js, Express.js
+-   **Frontend:** Flutter
+-   **Database and search:** MongoDB Atlas and Atlas Vector Search
+-   **AI:** Mistral models for knowledge extraction, embeddings, and
+    answer generation
+-   **Source integration:** GitHub App and GitHub API
+
+## Getting started
+
+### Clone the repository
+
+Replace the placeholders with your actual repository URL and folder
+name.
+
+``` bash
+git clone <YOUR_REPOSITORY_URL>
+cd <YOUR_REPOSITORY_DIRECTORY>
 ```
-├── backend/
-│   ├── src/
-│   │   ├── config/       # Env, Logger, Security, Database configs
-│   │   ├── middleware/   # Express middlewares (Error, 404, Request ID)
-│   │   ├── modules/      # Feature-based domains
-│   │   │   └── health/   # Health check controller and routes
-│   │   ├── routes/       # Central API routing
-│   │   ├── shared/       # Shared constants and utilities
-│   │   ├── app.ts        # Express app initialization
-│   │   └── server.ts     # Application entry point
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── vitest.config.ts
-│   └── tsconfig.json
-└── docker-compose.yml
+
+### Run the backend
+
+``` bash
+cd backend
+pnpm install
 ```
 
-> **Note on Architecture (Recommendation):**
-> Currently, the backend follows the layered architecture specified in `04-IMPLEMENTATION.md` (`controllers/`, `services/`, etc.). For future scalability and to align with modular boundaries, it is highly recommended to migrate to a **Feature-Based Architecture** (e.g., `src/modules/health/controller/...`). However, to maintain adherence to the source documents, the layered structure is used for this phase.
+Create a `backend/.env` file with the values required by your
+application. For a basic local setup:
 
-> **Flutter Initialization (Recommendation):**
-> The Flutter UI client is not required for Phase 0. When transitioning to the frontend implementation phase, you can initialize the Flutter app with:
-> `flutter create --org com.enterprise --project-name knowledge_assistant frontend`
-
-## Prerequisites
-
-- [Node.js](https://nodejs.org/en/) (v20+)
-- [pnpm](https://pnpm.io/installation) (v8+)
-- [Docker](https://www.docker.com/) & Docker Compose
-
-## Running Locally
-
-### Using Docker Compose (Recommended)
-
-To start the backend and a local MongoDB instance:
-
-```bash
-docker-compose up --build
+``` env
+PORT=3000
+NODE_ENV=development
+MONGO_URI=mongodb://localhost:27017/orivox
 ```
 
-The backend will be available at `http://localhost:3000`.
+Start MongoDB locally or use your MongoDB Atlas connection string. Add
+any other variables your app needs, such as AI, authentication, or
+GitHub credentials. Do not commit secrets.
 
-### Running Locally without Docker
+Start the development server:
 
-1. **Install Dependencies:**
-   ```bash
-   cd backend
-   pnpm install
-   ```
+``` bash
+pnpm dev
+```
 
-2. **Configure Environment Variables:**
-   Create a `.env` file in the `backend/` directory:
-   ```env
-   PORT=3000
-   NODE_ENV=development
-   MONGO_URI=mongodb://localhost:27017/engineering-knowledge
-   ```
+### Set up the Flutter frontend
 
-3. **Start MongoDB:**
-   Ensure you have a MongoDB instance running locally or update `MONGO_URI` to point to a MongoDB Atlas cluster.
+From the Flutter project directory, run:
 
-4. **Start the Development Server:**
-   ```bash
-   pnpm dev
-   ```
+``` bash
+flutter doctor
+flutter pub get
+```
 
-## API Endpoints (Phase 0)
+## Deploy Flutter Web with Firebase Hosting
 
-### Health Check
+1.  Install and sign in to the Firebase CLI:
 
-Verify the service is running correctly:
+    ``` bash
+    npm install -g firebase-tools
+    firebase login
+    ```
 
-```bash
+2.  Create or select a project in the [Firebase
+    Console](https://console.firebase.google.com/).
+
+3.  From the Flutter project directory, initialize Hosting:
+
+    ``` bash
+    firebase init hosting
+    ```
+
+    Select your Firebase project and enter `build/web` as the public
+    directory. Enable single-page app rewrites if needed for your
+    routing.
+
+4.  Build and deploy:
+
+    ``` bash
+    flutter build web --release
+    firebase deploy --only hosting
+    ```
+
+Firebase CLI will display the deployed URL. This deploys the frontend;
+the backend must be hosted separately.
+
+## Build Android releases
+
+From the Flutter project directory, build an APK for testing or direct
+installation:
+
+``` bash
+flutter build apk --release
+```
+
+For Google Play Store submission, build an Android App Bundle:
+
+``` bash
+flutter build appbundle --release
+```
+
+Typical output paths:
+
+-   APK: `build/app/outputs/flutter-apk/app-release.apk`
+-   App Bundle: `build/app/outputs/bundle/release/app-release.aab`
+
+Make sure signing and version details are configured before publishing.
+
+## API health check
+
+If the backend is running on port `3000`, check its health endpoint:
+
+``` bash
 curl http://localhost:3000/api/v1/health
 ```
-
-**Response:**
-```json
-{
-  "status": "UP",
-  "service": "Engineering Knowledge Assistant",
-  "version": "1.0.0"
-}
-```
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | The port the backend server listens on | `3000` |
-| `NODE_ENV` | The environment mode (`development`, `production`) | `development` |
-| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/engineering-knowledge` |
